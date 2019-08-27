@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">AdHoc</string>
+    <string name="action_dev_setting">调试中心</string>
+</resources>
