@@ -1,1 +1,1 @@
-include ':app', ':utils', ':adhocsdk', ':annotationcomplier', ':annotation'
+include ':app', ':utils', ':adhocsdk', ':annotationcomplier', ':annotation', ':plugin'
