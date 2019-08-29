@@ -7,15 +7,15 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
-import com.bcm.messenger.common.utils.WeakListener
 import com.sdk.common.utils.ContextHolder
+import com.sdk.common.utils.WeakListeners
 import com.sdk.common.utils.log.CLog
 
 object BleUtil {
     private var receiver: BroadcastReceiver?= null
     private var enabled:Boolean = false
 
-    val stateNotify = WeakListener<IBleStateNotify>()
+    val stateNotify = WeakListeners<IBleStateNotify>()
 
     fun init(context: Context) {
         enabled = isEnable()

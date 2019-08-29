@@ -6,10 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.wifi.p2p.WifiP2pDevice
 import android.net.wifi.p2p.WifiP2pManager
-import com.sdk.common.utils.ContextHolder
-import com.sdk.common.utils.Dispatcher
-import com.sdk.common.utils.ipV4Addr
-import com.sdk.common.utils.ipV6Addr
+import com.sdk.common.utils.*
 import com.sdk.common.utils.log.CLog
 
 class WiFiP2PHotspotManager(private val wifiP2PManager: WifiP2pManager,
@@ -75,10 +72,9 @@ class WiFiP2PHotspotManager(private val wifiP2PManager: WifiP2pManager,
             if (null != it) {
                 CLog.i("P2PGroupHotspot", "hotspot clients:${it.clientList.size}, ${it.networkName}, ${it.`interface`}, ${it.owner}, ${it.passphrase}")
 
-                result(WiFiP2PHotspot(ipV6Addr(WiFiConstant.WIFI_P2P0),
-                    ipV4Addr(WiFiConstant.WIFI_P2P0),
-                    it.passphrase,
-                    it.owner.deviceAddress))
+                val ipv6 = ipV6Addr(WiFiConstant.WIFI_P2P0)?:return@requestGroupInfo
+                result(WiFiP2PHotspot(it.owner.deviceAddress, it.networkName, ipv6.address.base64Encode().toString(),
+                    it.passphrase))
             }
             else {
                 result(null)
@@ -97,7 +93,7 @@ class WiFiP2PHotspotManager(private val wifiP2PManager: WifiP2pManager,
 
     fun isHotspotEnable(result:(enable:Boolean)->Unit) {
         getHotspotInfo {
-            result(null != it && it.ownerDeviceId == myDeviceId)
+            result(null != it && it.ssid == myDeviceId)
         }
     }
 

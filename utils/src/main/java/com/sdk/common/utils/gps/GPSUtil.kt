@@ -4,15 +4,15 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.content.*
 import android.location.LocationManager
-import com.bcm.messenger.common.utils.WeakListener
 import com.sdk.common.utils.ContextHolder
+import com.sdk.common.utils.WeakListeners
 import com.sdk.common.utils.log.CLog
 
 object GPSUtil {
     private var receiver: BroadcastReceiver?= null
     private var enable:Boolean = false
 
-    val stateNotify = WeakListener<IGPSStateNotify>()
+    val stateNotify = WeakListeners<IGPSStateNotify>()
 
     fun init(context: Context) {
         enable = isEnable()

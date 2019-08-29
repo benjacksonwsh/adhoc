@@ -11,12 +11,12 @@ import com.sdk.adhocsdk.p2pdiscover.WiFiP2PReceiver
 import com.sdk.annotation.ModuleService
 import com.sdk.common.utils.ContextHolder
 import com.sdk.common.utils.Dispatcher
-import com.sdk.common.utils.GsonUtil
 import com.sdk.common.utils.ipV6Addr
 import com.sdk.common.utils.log.CLog
+import com.sdk.common.utils.wifi.WiFiUtil
 
 @ModuleService
-class AdHocSDK {
+class AdHocSDK: WiFiP2PReceiver.IWiFiDeviceNotify {
     private val TAG = "AdHocSDK"
     private val wifiP2PManager: WifiP2pManager = ContextHolder.CONTEXT.getSystemService (Context.WIFI_P2P_SERVICE) as WifiP2pManager
     private lateinit var channel: WifiP2pManager.Channel
@@ -34,15 +34,6 @@ class AdHocSDK {
                     if (state == WifiP2pManager.WIFI_P2P_STATE_ENABLED) {
                         CLog.i("AdHocSDK", "event:p2p enable")
                         broadcastMyAdHocState()
-
-                        wiFiP2PHotspotManager.isInHotspot {
-                            if (it) {
-                                wiFiP2PHotspotManager.disableHotspot {
-                                    broadcastMyAdHocState()
-                                }
-                            }
-                        }
-
                     } else {
                         CLog.i("AdHocSDK", "event:p2p disable")
                     }
@@ -55,7 +46,6 @@ class AdHocSDK {
         val intentFilter = IntentFilter()
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION)
         ContextHolder.CONTEXT.registerReceiver(p2pStateReceiver, intentFilter)
-
         doInit()
     }
 
@@ -68,16 +58,10 @@ class AdHocSDK {
         wiFiP2PHotspotManager = WiFiP2PHotspotManager(wifiP2PManager, channel)
         wiFiP2PBroadcaster = WiFiP2PBroadcaster(wifiP2PManager, channel)
         wiFiP2PReceiver = WiFiP2PReceiver(wifiP2PManager, channel)
+        wiFiP2PReceiver.notify.addListener(this)
 
-//        wiFiP2PHotspotManager.isInHotspot {
-//            if (!it) {
-//                wiFiP2PHotspotManager.enableHotspot {
-//                    broadcastMyAdHocState()
-//                }
-//            }
-//        }
-
-        broadcastMyAdHocState()
+        //broadcastMyAdHocState()
+        //wiFiP2PHotspotManager.disableHotspot {  }
 
         wiFiP2PReceiver.setup()
 
@@ -90,26 +74,30 @@ class AdHocSDK {
 
     private fun broadcastMyAdHocState() {
         wiFiP2PHotspotManager.getHotspotInfo { hotspot ->
-            if (wiFiP2PHotspotManager.myDeviceId().isEmpty()) {
-                CLog.w(TAG, "broadcastMyAdHocState my device id should not empty")
+            if (null == hotspot) {
+                Dispatcher.mainThread.dispatch({
+//                    wiFiP2PHotspotManager.enableHotspot {
+//                        broadcastMyAdHocState()
+//                    }
+                },1000)
                 return@getHotspotInfo
             }
 
-            wiFiP2PBroadcaster.broadcast(wiFiP2PHotspotManager.myDeviceId(),
-                hotspot?.ownerDeviceId?:"",
-                hotspot?.passwd?:"") {
-
+            wiFiP2PBroadcaster.broadcast(hotspot.ssid,
+                hotspot.passwd, hotspot.ipV6Addr) {
                 CLog.i(TAG, "broadcast result:$it")
             }
         }
 
     }
 
-
-    fun testHotspot() {
-        wiFiP2PHotspotManager.getHotspotInfo {
-            if (null != it) {
-                CLog.i("AdHocSDK", "testHotspot ${GsonUtil.toJson(it)}")
+    override fun onWiFiDeviceChanged() {
+        val devices = wiFiP2PReceiver.getHotspotDevices()
+        devices.forEach {
+            if (it.ssid.isNotEmpty()) {
+                WiFiUtil.connectWiFi(it.ssid, it.passwd) {
+                    CLog.i(TAG, "connect result $it")
+                }
             }
         }
     }

@@ -28,8 +28,6 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
 
         fab.setOnClickListener { view ->
-            adHocSdk.testHotspot()
-
             Snackbar.make(view, "testing Wi-Fi P2P manager hotspot", Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show()
         }

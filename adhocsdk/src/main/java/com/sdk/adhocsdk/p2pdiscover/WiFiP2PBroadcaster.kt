@@ -12,18 +12,17 @@ class WiFiP2PBroadcaster(private val wifiP2PManager: WifiP2pManager,
         const val TAG = "WiFiP2PBroadcaster"
     }
 
-    fun broadcast(mySSID:String, ownerSSID:String, pwd:String, result:(succeed:Boolean)->Unit) {
+    fun broadcast(ssid:String, pwd:String, ipV6:String, result:(succeed:Boolean)->Unit) {
         val txtMap = HashMap<String, String>()
-        txtMap["ssid"] = mySSID
-        if (ownerSSID.isNotBlank()) {
-            txtMap["ossid"] = ownerSSID
-        }
-
-        if (pwd.isNotBlank()) {
+        txtMap["ssid"] = ssid
+        if (pwd.isNotEmpty()) {
             txtMap["pwd"] = pwd
         }
+        if (ipV6.isNotEmpty()) {
+            txtMap["ipv6"] = ipV6
+        }
 
-        CLog.d(TAG, "broadcasting ssid:$mySSID ownerSSID:$ownerSSID pwd:$pwd")
+        CLog.d(TAG, "broadcasting ssid:$ssid pwd:$pwd, ipv6:$ipV6")
         broadcast(txtMap, result)
     }
 
@@ -40,7 +39,7 @@ class WiFiP2PBroadcaster(private val wifiP2PManager: WifiP2pManager,
         }
     }
 
-    fun cancelBroadcast(result: (succeed: Boolean) -> Unit) {
+    private fun cancelBroadcast(result: (succeed: Boolean) -> Unit) {
         wifiP2PManager.clearLocalServices(channel,WiFiP2PActionProxy {
             succeed, reason ->
 

@@ -1,12 +1,13 @@
 package com.sdk.adhocsdk.p2pdiscover
 
-import android.net.wifi.p2p.WifiP2pConfig
 import android.net.wifi.p2p.WifiP2pManager
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceRequest
 import com.sdk.adhocsdk.WiFiConstant
 import com.sdk.adhocsdk.WiFiP2PActionProxy
-import com.sdk.common.utils.Dispatcher
+import com.sdk.adhocsdk.WiFiP2PHotspot
+import com.sdk.common.utils.WeakListeners
 import com.sdk.common.utils.log.CLog
+import java.net.Inet6Address
 
 class WiFiP2PReceiver (private val wifiP2PManager: WifiP2pManager,
                        private val channel: WifiP2pManager.Channel) {
@@ -15,39 +16,23 @@ class WiFiP2PReceiver (private val wifiP2PManager: WifiP2pManager,
     }
 
     private val req = WifiP2pDnsSdServiceRequest.newInstance(WiFiConstant.DNSSD_INSTANCE, WiFiConstant.DNSSD_SERVER_TYPE)
+    private val hotspotDevices = mutableSetOf<WiFiP2PHotspot>()
+
+    val notify = WeakListeners<IWiFiDeviceNotify>()
 
     private val txtListener = WifiP2pManager.DnsSdTxtRecordListener {
             fullDomainName, txtRecordMap, srcDevice ->
 
-        val ssid = txtRecordMap["ssid"]
-        val ossid = txtRecordMap["ossid"]
-        val pwd = txtRecordMap["pwd"]
+        val ssid = txtRecordMap["ssid"]?:""
+        val pwd = txtRecordMap["pwd"]?:""
+        val ipv6 = txtRecordMap["ipv6"]?:""
 
-        if (ossid.isNullOrBlank() && pwd.isNullOrBlank() && ssid?.isNotBlank() == true) {
-            wifiP2PManager.requestGroupInfo(channel) {
-                if (null != it && it.isGroupOwner) {
-//                    val config = WifiP2pConfig()
-//                    config.deviceAddress = ssid
-//                    wifiP2PManager.connect(channel, config, WiFiP2PActionProxy {
-//                        succeed, reason ->
-//
-//                        CLog.i(TAG, "connect ${srcDevice.deviceAddress} result:$succeed reson:$reason")
-//                    })
-                } else {
-//                    wifiP2PManager.createGroup(channel, WiFiP2PActionProxy {
-//                        succeed, reason ->
-//                        if (succeed) {
-//                            Dispatcher.mainThread.dispatch({
-//                                val config = WifiP2pConfig()
-//                                config.deviceAddress = ssid
-//                                wifiP2PManager.connect(channel, config, WiFiP2PActionProxy {
-//                                        succeed, reason ->
-//
-//                                    CLog.i(TAG, "connect 1 ${srcDevice.deviceAddress} result:$succeed reson:$reason")
-//                                })
-//                            }, 2000)
-//                        }
-//                    })
+        if (ssid.isNotEmpty() && pwd.isNotEmpty() && ipv6.isNotEmpty()) {
+            val device = WiFiP2PHotspot(srcDevice.deviceAddress, ssid, ipv6, pwd)
+            if (!hotspotDevices.contains(device)) {
+                hotspotDevices.add(device)
+                notify.forEach {
+                    it.onWiFiDeviceChanged()
                 }
             }
         }
@@ -64,12 +49,16 @@ class WiFiP2PReceiver (private val wifiP2PManager: WifiP2pManager,
         wifiP2PManager.setDnsSdResponseListeners(channel, serviceListener, txtListener)
     }
 
+    fun getHotspotDevices():List<WiFiP2PHotspot> {
+        return hotspotDevices.toList()
+    }
 
     fun setup() {
         setup {  }
     }
 
     private fun setup(finished: () -> Unit) {
+        hotspotDevices.clear()
         tearDown {
             wifiP2PManager.addServiceRequest(channel, req, WiFiP2PActionProxy {
                     succeed1,reason1 ->
@@ -80,6 +69,7 @@ class WiFiP2PReceiver (private val wifiP2PManager: WifiP2pManager,
     }
 
     fun search() {
+        hotspotDevices.clear()
         wifiP2PManager.discoverServices(channel, WiFiP2PActionProxy {
                 succeed,reason ->
             CLog.i(TAG, "search discoverServices succeed:$succeed, reason:$reason")
@@ -104,4 +94,8 @@ class WiFiP2PReceiver (private val wifiP2PManager: WifiP2pManager,
         })
     }
 
+
+    interface IWiFiDeviceNotify {
+        fun onWiFiDeviceChanged()
+    }
 }
