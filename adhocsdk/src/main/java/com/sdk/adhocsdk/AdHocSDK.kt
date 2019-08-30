@@ -76,9 +76,9 @@ class AdHocSDK: WiFiP2PReceiver.IWiFiDeviceNotify {
         wiFiP2PHotspotManager.getHotspotInfo { hotspot ->
             if (null == hotspot) {
                 Dispatcher.mainThread.dispatch({
-//                    wiFiP2PHotspotManager.enableHotspot {
-//                        broadcastMyAdHocState()
-//                    }
+                    wiFiP2PHotspotManager.enableHotspot {
+                        broadcastMyAdHocState()
+                    }
                 },1000)
                 return@getHotspotInfo
             }

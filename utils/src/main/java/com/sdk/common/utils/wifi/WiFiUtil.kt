@@ -5,12 +5,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.NetworkInfo
-import android.net.wifi.ScanResult
 import android.net.wifi.WifiConfiguration
 import android.net.wifi.WifiManager
 import com.sdk.common.utils.ContextHolder
 import com.sdk.common.utils.WeakListeners
 import com.sdk.common.utils.log.CLog
+import com.sdk.common.utils.network.NetworkUtil
 
 object WiFiUtil {
     private const val TAG = "WiFiUtil"
@@ -96,33 +96,20 @@ object WiFiUtil {
         wiFiManager.isWifiEnabled = true
     }
 
-    fun getWiFiList(): List<ScanResult> {
-        return wiFiManager.scanResults
-    }
-
-    fun getWiFiNameByBSSID(ssid:String): String {
-        val result = getWiFiList().mapNotNull {
-            if (it.BSSID == ssid) {
-                it.SSID
-            } else {
-                null
-            }
-        }
-
-        return if (result.isNotEmpty()) {
-            result.last()
+    fun currentWiFiSSID(): String {
+        return if (NetworkUtil.isWiFi()) {
+            wiFiManager.connectionInfo?.ssid?:""
         } else {
             ""
         }
     }
 
-    fun currentWiFiBSSID(): String {
-        val currentWifi = wiFiManager.connectionInfo
-        return currentWifi?.bssid ?: ""
-    }
-
     fun currentNetId(): Int {
-        return wiFiManager.connectionInfo?.networkId?:0
+        return if (NetworkUtil.isWiFi()) {
+            wiFiManager.connectionInfo?.networkId?:0
+        } else {
+            0
+        }
     }
 
     fun connectWiFi(ssid: String, passphrase: String, result: (succeed: Boolean) -> Unit): Boolean {
@@ -132,6 +119,7 @@ object WiFiUtil {
         if (config.networkId > 0) {
             return connectWiFi(config.networkId, result)
         }
+
         val netId = wiFiManager.addNetwork(config)
         if (netId > 0) {
             CLog.i(TAG, "connectWiFiPassword $ssid netid:$netId")
@@ -142,7 +130,7 @@ object WiFiUtil {
         return false
     }
 
-    fun connectWiFi(netId:Int, result: (succeed: Boolean) -> Unit): Boolean {
+    private fun connectWiFi(netId:Int, result: (succeed: Boolean) -> Unit): Boolean {
         CLog.i(TAG, "connectWiFi $netId")
         val intentFilter = IntentFilter()
         intentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION)
@@ -192,28 +180,17 @@ object WiFiUtil {
 
 
     private fun createWiFiConfig(ssid: String, password: String): WifiConfiguration {
-        //初始化WifiConfiguration
-        val config = WifiConfiguration()
-        config.allowedAuthAlgorithms.clear()
-        config.allowedGroupCiphers.clear()
-        config.allowedKeyManagement.clear()
-        config.allowedPairwiseCiphers.clear()
-        config.allowedProtocols.clear()
-
-        //指定对应的SSID
-        config.SSID = "\"$ssid\""
-
         //如果之前有类似的配置
         val tempConfig = isExist(ssid)
         if (tempConfig != null) {
-            //则清除旧有配置
-            if (!wiFiManager.removeNetwork(tempConfig.networkId)) {
+            if (tempConfig.networkId > 0) {
                 return tempConfig
             }
         }
 
-
-        config.preSharedKey = "\"password\""
+        val config = WifiConfiguration()
+        config.SSID = "\"$ssid\""
+        config.preSharedKey = "\"$password\""
         config.hiddenSSID = true
         config.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.OPEN)
         config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP)

@@ -51,13 +51,13 @@ object BleUtil {
         return bleAdapter?.isEnabled == true
     }
 
-    fun isSupport(): Boolean {
-        if(!ContextHolder.CONTEXT.packageManager
-                .hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
-            return false
-        }
+    fun isSupportAdvertiser(): Boolean {
+        val bleAdapter = BluetoothAdapter.getDefaultAdapter()
+        return bleAdapter?.bluetoothLeAdvertiser != null
+    }
 
-        return true
+    fun isSupport(): Boolean {
+        return null != BluetoothAdapter.getDefaultAdapter()
     }
 
     fun enableBLE(activity: Activity, result:(succeed:Boolean)->Unit) {
