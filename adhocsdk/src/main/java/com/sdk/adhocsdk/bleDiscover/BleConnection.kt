@@ -14,7 +14,6 @@ class BleConnection(val device:BluetoothDevice): BluetoothGattCallback() {
     private var gatt:BluetoothGatt? = null
     private var listener:IConnectionListener? = null
 
-
     fun connect() {
         if (connectState != CONNECT_STATE.DISCONNECTED) {
             return
