@@ -5,7 +5,8 @@ buildscript {
     repositories {
         google()
         jcenter()
-        
+        maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
+
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.4.2'
@@ -19,11 +20,11 @@ allprojects {
     repositories {
         google()
         jcenter()
-        
+        maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
     }
 
     subprojects {
-        afterEvaluate {project ->
+        afterEvaluate { project ->
             if (project.hasProperty("android")) {
                 android {
                     compileOptions {

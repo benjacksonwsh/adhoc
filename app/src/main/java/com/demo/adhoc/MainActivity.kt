@@ -1,27 +1,24 @@
 package com.demo.adhoc
 
 import android.Manifest
+import android.Manifest.permission
 import android.os.Bundle
-import com.google.android.material.snackbar.Snackbar
-import androidx.appcompat.app.AppCompatActivity;
 import android.view.Menu
 import android.view.MenuItem
-import com.sdk.adhocsdk.AdHocSDK
-
-import kotlinx.android.synthetic.main.activity_main.*
-import android.Manifest.permission
-import android.Manifest.permission.WRITE_CALENDAR
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
+import com.google.android.material.snackbar.Snackbar
+import com.sdk.adhocsdk.AdHocSDK
 import com.sdk.common.utils.log.CLog
 import com.sdk.common.utils.network.IConnectionListener
 import com.sdk.common.utils.network.NetworkUtil
+import kotlinx.android.synthetic.main.activity_main.*
 
 
 class MainActivity : AppCompatActivity() {
     private val adHocSdk = AdHocSDK()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -35,6 +32,11 @@ class MainActivity : AppCompatActivity() {
         if (ContextCompat.checkSelfPermission(this, permission.ACCESS_COARSE_LOCATION)!= PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(permission.ACCESS_COARSE_LOCATION,Manifest.permission.ACCESS_FINE_LOCATION), 1000)
         }
+
+        if (ContextCompat.checkSelfPermission(this, permission.ACCESS_FINE_LOCATION)!= PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_FINE_LOCATION), 1000)
+        }
+
 
 
         NetworkUtil.addListener(IConnectionListener {

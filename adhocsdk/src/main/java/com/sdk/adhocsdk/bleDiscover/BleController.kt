@@ -4,7 +4,7 @@ import android.bluetooth.BluetoothAdapter
 import android.content.Context
 import com.sdk.common.utils.ble.BleUtil
 
-class BleControler(val context: Context): BleUtil.IBleStateNotify {
+class BleController: BleUtil.IBleStateNotify {
     private var bleClient:BleClient? = null
     private var bleServer:BleServer? = null
 
