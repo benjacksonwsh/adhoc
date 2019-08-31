@@ -12,7 +12,7 @@ import com.sdk.adhocsdk.bleDiscover.BleClient
 import com.sdk.common.utils.Dispatcher
 import kotlinx.android.synthetic.main.main_activity.*
 
-class MainActivity:AppCompatActivity() {
+class MainActivity:AppCompatActivity(), BleClient.IBleClientListener {
 
     private val bleClient = BleClient(BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,34 +29,36 @@ class MainActivity:AppCompatActivity() {
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_FINE_LOCATION), 1000)
         }
+
+        bleClient.setListener(this)
         bleClient.setup()
 
-//        Dispatcher.mainThread.repeat({
-//            val txt = if(bleClient.getDeviceList().isEmpty()) {
-//                "no device found"
-//            } else {
-//                val devId = bleClient.getDeviceList().first()
-//                 "${devId} ${bleClient.getConnectionState(devId)}"
-//            }
-//            main_device_id.text = txt
-//        }, 2000)
+        Dispatcher.mainThread.repeat({
+            val txt = if(bleClient.getDeviceList().isEmpty()) {
+                "no device found"
+            } else {
+                val devId = bleClient.getDeviceList().first()
+                 "${devId} ${bleClient.getConnectionState(devId)}"
+            }
+            main_device_id.text = txt
+        }, 2000)
 
-//        main_connect.setOnClickListener {
-//            val devList = bleClient.getDeviceList()
-//            if(devList.isEmpty()) {
-//                Toast.makeText(this, "device list is empty", Toast.LENGTH_LONG).show()
-//            } else {
-//                val devId = devList.first()
-//                bleClient.connectDevice(devId)
-//            }
-//        }
+        main_connect.setOnClickListener {
+            val devList = bleClient.getDeviceList()
+            if(devList.isEmpty()) {
+                Toast.makeText(this, "device list is empty", Toast.LENGTH_LONG).show()
+            } else {
+                val devId = devList.first()
+                bleClient.connectDevice(devId)
+            }
+        }
     }
 
-//    override fun onReceiveData(deviceId: String, data: ByteArray) {
-//        val text = String(data)
-//        Dispatcher.mainThread.dispatch {
-//            val tmp = "${System.currentTimeMillis()} $deviceId  $text"
-//            main_read_text.text = tmp
-//        }
-//    }
+    override fun onReceiveData(deviceId: String, data: ByteArray) {
+        val text = String(data)
+        Dispatcher.mainThread.dispatch {
+            val tmp = "${System.currentTimeMillis()} $deviceId  $text"
+            main_read_text.text = tmp
+        }
+    }
 }

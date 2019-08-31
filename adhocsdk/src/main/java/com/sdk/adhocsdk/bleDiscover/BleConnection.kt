@@ -8,9 +8,19 @@ import com.sdk.common.utils.base64Decode
 import com.sdk.common.utils.base64Encode
 
 
-class BleConnection(private val device:BluetoothDevice): BluetoothGattCallback() {
+class BleConnection(val device:BluetoothDevice): BluetoothGattCallback() {
     private val TAG = "BleConnection"
-    init {
+    private var connectState = CONNECT_STATE.DISCONNECTED
+    private var gatt:BluetoothGatt? = null
+    private var listener:IConnectionListener? = null
+
+
+    fun connect() {
+        if (connectState != CONNECT_STATE.DISCONNECTED) {
+            return
+        }
+
+        connectState = CONNECT_STATE.CONNECTING
         CLog.i(TAG, "connecting ble device name:${device.name} address:${device.address}")
         device.connectGatt(ContextHolder.CONTEXT, false, this )
     }
@@ -19,17 +29,31 @@ class BleConnection(private val device:BluetoothDevice): BluetoothGattCallback()
         return true
     }
 
+    fun getState(): CONNECT_STATE {
+        return connectState
+    }
 
+    fun close() {
+        gatt?.close()
+        gatt = null
+        connectState = CONNECT_STATE.DISCONNECTED
+    }
+
+    fun setListener( listener:IConnectionListener ) {
+        this.listener = listener
+    }
     override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
         super.onServicesDiscovered(gatt, status)
-        gatt.services.forEach { service ->
+        gatt.services.forEach { service->
             CLog.i(TAG, "onServicesDiscovered ${device.address} service  ${service.uuid}")
             if (service.uuid == BLEConstant.ID_SERVICE) {
                 CLog.i(TAG, "onServicesDiscovered data server${device.address}")
                 service.characteristics.forEach {characteristic ->
                     if (characteristic.uuid == BLEConstant.ID_CHARACTERISTIC) {
+                        connectState = CONNECT_STATE.CONNECTED
                         CLog.i(TAG, "read data ${device.address}")
                         gatt.readCharacteristic(characteristic)
+                        this.gatt = gatt
                     }
                 }
             }
@@ -43,6 +67,7 @@ class BleConnection(private val device:BluetoothDevice): BluetoothGattCallback()
     ) {
         val value = String(characteristic.value)
         CLog.i(TAG, "onCharacteristicRead ${device.address} recieved  $value")
+        listener?.onReceiveData(this, characteristic.value?:"".toByteArray())
     }
 
     override fun onCharacteristicWrite(
@@ -60,6 +85,7 @@ class BleConnection(private val device:BluetoothDevice): BluetoothGattCallback()
             gatt.discoverServices()
         } else if(newState == BluetoothGatt.STATE_DISCONNECTED) {
             CLog.i(TAG, "device ${device.address} disconnected")
+            connectState = CONNECT_STATE.DISCONNECTED
         }
     }
 
@@ -104,5 +130,17 @@ class BleConnection(private val device:BluetoothDevice): BluetoothGattCallback()
 
     override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
         super.onMtuChanged(gatt, mtu, status)
+    }
+
+    interface IConnectionListener {
+        fun onReceiveData(connection: BleConnection, data:ByteArray)
+        fun onClosed(connection: BleConnection)
+        fun onConnected(connection: BleConnection)
+    }
+
+    enum class CONNECT_STATE {
+        CONNECTING,
+        CONNECTED,
+        DISCONNECTED
     }
 }

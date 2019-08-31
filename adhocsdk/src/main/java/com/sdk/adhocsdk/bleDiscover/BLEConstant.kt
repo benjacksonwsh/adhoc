@@ -3,7 +3,7 @@ package com.sdk.adhocsdk.bleDiscover
 import java.util.*
 
 object BLEConstant {
-    val ID_SERVICE: UUID = UUID.fromString("0000BCD0-0000-1000-8000-00805f9b34fb")//("e7c3e385-c024-47fa-b295-beadd55e70d3")
+    val ID_SERVICE: UUID = UUID.fromString("e7c3e385-c024-47fa-b295-beadd55e70d3")
     val ID_CHARACTERISTIC: UUID = UUID.fromString("0000BCD1-0000-1000-8000-00805f9b34fb")
     val ID_DESCRIPTOR: UUID = UUID.fromString("0000BCD2-0000-1000-8000-00805f9b34fb")
     val ADVERTISE_DATA_MANUFACTURER = "BCMAIR".toByteArray()

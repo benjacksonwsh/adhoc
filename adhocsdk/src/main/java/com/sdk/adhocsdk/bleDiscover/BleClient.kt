@@ -5,9 +5,10 @@ import android.bluetooth.le.ScanResult
 import com.sdk.common.utils.GsonUtil
 import com.sdk.common.utils.log.CLog
 
-class BleClient(private val scanner: BluetoothLeScanner): ScanCallback() {
+class BleClient(private val scanner: BluetoothLeScanner): ScanCallback(), BleConnection.IConnectionListener {
     private val TAG = "BleClient"
     private val connections = HashMap<String, BleConnection>()
+    private var listener:IBleClientListener? = null
 
     fun setup() {
         scanner.startScan(this)
@@ -17,10 +18,21 @@ class BleClient(private val scanner: BluetoothLeScanner): ScanCallback() {
         scanner.stopScan(this)
     }
 
+    fun setListener( listener:IBleClientListener ) {
+        this.listener = listener
+    }
+
+    fun connectDevice(deviceId:String) {
+        connections[deviceId]?.connect()
+    }
+
     fun getDeviceList():List<String> {
         return connections.keys.toList()
     }
 
+    fun getConnectionState(deviceId: String): String {
+        return connections[deviceId]?.getState()?.toString()?:""
+    }
 
     override fun onScanResult(callbackType: Int, result: ScanResult) {
         super.onScanResult(callbackType, result)
@@ -31,7 +43,10 @@ class BleClient(private val scanner: BluetoothLeScanner): ScanCallback() {
         if (manufacturer?.contentEquals(BLEConstant.ADVERTISE_DATA_MANUFACTURER) == true){
             CLog.i(TAG, "device ${result.device.name} ${GsonUtil.toJson(record?.manufacturerSpecificData?:"")}\n ${GsonUtil.toJson(record?.serviceUuids?:"")} ${result.device.address}")
             if (!connections.containsKey(result.device.address)) {
-                connections[result.device.address] = BleConnection(result.device)
+                val connection = BleConnection(result.device)
+                connection.setListener(this)
+                connections.clear()
+                connections[result.device.address] = connection
             }
         }
     }
@@ -45,5 +60,21 @@ class BleClient(private val scanner: BluetoothLeScanner): ScanCallback() {
     override fun onScanFailed(errorCode: Int) {
         super.onScanFailed(errorCode)
         CLog.i(TAG, "device scan failed:$errorCode")
+    }
+
+    override fun onReceiveData(connection: BleConnection, data: ByteArray) {
+        listener?.onReceiveData(connection.device.address, data)
+    }
+
+    override fun onClosed(connection: BleConnection) {
+
+    }
+
+    override fun onConnected(connection: BleConnection) {
+
+    }
+
+    interface IBleClientListener {
+        fun onReceiveData(deviceId: String, data:ByteArray)
     }
 }

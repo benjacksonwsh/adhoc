@@ -16,6 +16,7 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
         private const val TAG = "BleServer"
     }
 
+    private var listener:IBleServerListener? = null
     private var gattServer: BluetoothGattServer? = null
     private val characteristic = BluetoothGattCharacteristic(BLEConstant.ID_CHARACTERISTIC,
         BluetoothGattCharacteristic.PROPERTY_READ,
@@ -34,6 +35,10 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
 
     fun tearDown() {
 
+    }
+
+    fun setListener(listener:IBleServerListener?) {
+        this.listener = listener
     }
 
     fun broadcast(): Boolean {
@@ -80,9 +85,11 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
                 when (newState) {
                     BluetoothGatt.STATE_CONNECTED -> {
                         CLog.i(TAG,"client connected, device: $device")
+                        listener?.onClientConnected(device.address)
                     }
                     BluetoothGatt.STATE_DISCONNECTED -> {
                         CLog.i(TAG,"client disconnected, device: $device")
+                        listener?.onClientDisconnected(device.address)
                     }
                 }
             }
@@ -147,5 +154,10 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
         gattServer?.clearServices()
         gattServer?.close()
         gattServer = null
+    }
+
+    interface IBleServerListener {
+        fun onClientConnected(deviceId: String)
+        fun onClientDisconnected(deviceId: String)
     }
 }

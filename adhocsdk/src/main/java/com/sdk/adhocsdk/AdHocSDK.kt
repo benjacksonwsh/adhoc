@@ -27,7 +27,6 @@ class AdHocSDK: WiFiP2PReceiver.IWiFiDeviceNotify {
     private lateinit var wiFiP2PReceiver:WiFiP2PReceiver
     private val bleController: BleController = BleController()
 
-
     private val p2pStateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when(intent?.action) {
