@@ -45,7 +45,11 @@ class BleClient(private val scanner: BluetoothLeScanner): ScanCallback(), BleCon
             if (!connections.containsKey(result.device.address)) {
                 val connection = BleConnection(result.device)
                 connection.setListener(this)
-                connections.clear()
+                if (connections.isNotEmpty()) {
+                    connections.values.first().close()
+                    connections.clear()
+                }
+
                 connections[result.device.address] = connection
             }
         }

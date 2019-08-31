@@ -86,6 +86,7 @@ class BleConnection(val device:BluetoothDevice): BluetoothGattCallback() {
         } else if(newState == BluetoothGatt.STATE_DISCONNECTED) {
             CLog.i(TAG, "device ${device.address} disconnected")
             connectState = CONNECT_STATE.DISCONNECTED
+            this.close()
         }
     }
 
