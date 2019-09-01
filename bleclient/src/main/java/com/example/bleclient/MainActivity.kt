@@ -2,6 +2,7 @@ package com.example.bleclient
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -13,7 +14,6 @@ import com.sdk.common.utils.Dispatcher
 import kotlinx.android.synthetic.main.main_activity.*
 
 class MainActivity:AppCompatActivity(), BleClient.IBleClientListener {
-
     private val bleClient =
         BleClient(BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,7 +39,7 @@ class MainActivity:AppCompatActivity(), BleClient.IBleClientListener {
                 "no device found"
             } else {
                 val devId = bleClient.getDeviceList().first()
-                 "${devId} ${bleClient.getConnectionState(devId)}"
+                 "$devId ${bleClient.getConnectionState(devId)}"
             }
             main_device_id.text = txt
         }, 2000)
@@ -49,17 +49,30 @@ class MainActivity:AppCompatActivity(), BleClient.IBleClientListener {
             if(devList.isEmpty()) {
                 Toast.makeText(this, "device list is empty", Toast.LENGTH_LONG).show()
             } else {
+                bleClient.disconnectAll()
                 val devId = devList.first()
                 bleClient.connectDevice(devId)
             }
         }
     }
 
-    override fun onReceiveData(deviceId: String, data: ByteArray) {
+    override fun onReceiveData(device:BluetoothDevice, data: ByteArray) {
         val text = String(data)
         Dispatcher.mainThread.dispatch {
-            val tmp = "${System.currentTimeMillis()} $deviceId  $text"
+            val tmp = "${System.currentTimeMillis()} ${device.address}  $text"
             main_read_text.text = tmp
+            bleClient.sendRequest(device.address, "${System.currentTimeMillis()} req from client".toByteArray())
         }
+    }
+
+    override fun onConnected() {
+        val devList = bleClient.getDeviceList()
+        if (devList.isNotEmpty()) {
+            bleClient.sendRequest(devList.first(), "${System.currentTimeMillis()} req from client".toByteArray())
+        }
+    }
+
+    override fun onDisconnected() {
+
     }
 }

@@ -7,14 +7,13 @@ import com.sdk.adhocsdk.ble.BLEConstant
 import com.sdk.common.utils.Dispatcher
 
 
-class BleConnection(val device:BluetoothDevice): BluetoothGattCallback() {
+class BleConnection(val device: BluetoothDevice) : BluetoothGattCallback() {
     private val TAG = "BleConnection"
-    private var connectState =
-        CONNECT_STATE.DISCONNECTED
-    private var gatt:BluetoothGatt? = null
+    private var connectState = CONNECT_STATE.INIT
+    private var gatt: BluetoothGatt? = null
     private var listener: IConnectionListener? = null
-    private var reader:BluetoothGattCharacteristic? = null
-    private var writer:BluetoothGattCharacteristic? = null
+    private var reader: BluetoothGattCharacteristic? = null
+    private var writer: BluetoothGattCharacteristic? = null
 
     fun connect() {
         if (connectState != CONNECT_STATE.DISCONNECTED) {
@@ -23,10 +22,10 @@ class BleConnection(val device:BluetoothDevice): BluetoothGattCallback() {
 
         connectState = CONNECT_STATE.CONNECTING
         CLog.i(TAG, "connecting ble device name:${device.name} address:${device.address}")
-        gatt = device.connectGatt(ContextHolder.CONTEXT, false, this )
+        gatt = device.connectGatt(ContextHolder.CONTEXT, false, this)
     }
 
-    fun write(data:ByteArray): Boolean{
+    fun send(data: ByteArray): Boolean {
         writer?.value = data
         return gatt?.writeCharacteristic(writer) == true
     }
@@ -38,30 +37,36 @@ class BleConnection(val device:BluetoothDevice): BluetoothGattCallback() {
     fun close() {
         gatt?.close()
         gatt = null
+        writer = null
+        reader = null
         connectState = CONNECT_STATE.DISCONNECTED
     }
 
-    fun setListener( listener: IConnectionListener) {
+    fun setListener(listener: IConnectionListener) {
         this.listener = listener
     }
+
     override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
         super.onServicesDiscovered(gatt, status)
-        gatt.services.forEach { service->
-            CLog.i(TAG, "onServicesDiscovered ${device.address} service  ${service.uuid}")
+        gatt.services.forEach { service ->
             if (service.uuid == BLEConstant.ID_SERVICE) {
-                CLog.i(TAG, "onServicesDiscovered data server${device.address}")
-                connectState = CONNECT_STATE.CONNECTED
-                service.characteristics.forEach {characteristic ->
+                CLog.i(TAG, "onServicesDiscovered ${device.address}")
+                service.characteristics.forEach { characteristic ->
                     if (characteristic.uuid == BLEConstant.ID_CLIENT_WRITER) {
                         this.writer = characteristic
-                    } else if(characteristic.uuid == BLEConstant.ID_CLIENT_READER){
+                    } else if (characteristic.uuid == BLEConstant.ID_CLIENT_READER) {
                         this.reader = characteristic
                         gatt.setCharacteristicNotification(characteristic, true)
-                        gatt.readCharacteristic(characteristic)
                     }
                 }
             }
         }
+
+        if (this.writer == null && this.reader == null) {
+            close()
+            return
+        }
+        setState(CONNECT_STATE.CONNECTED)
     }
 
     override fun onCharacteristicRead(
@@ -69,18 +74,9 @@ class BleConnection(val device:BluetoothDevice): BluetoothGattCallback() {
         characteristic: BluetoothGattCharacteristic,
         status: Int
     ) {
-        val value = String(characteristic.value)
-        CLog.i(TAG, "onCharacteristicRead ${device.address} recieved  $value")
-        listener?.onReceiveData(this, characteristic.value?:"".toByteArray())
-
-        Dispatcher.mainThread.dispatch ({
-            if(!write("hello".toByteArray())) {
-                CLog.e(TAG, "onCharacteristicRead send failed", null)
-            } else {
-                CLog.i(TAG, "onCharacteristicRead send succeed")
-            }
-        }, 1000)
-
+        val value = characteristic.value
+        CLog.i(TAG, "onCharacteristicRead ${device.address} recieved  ${value.size} bytes")
+        listener?.onReceiveData(this, characteristic.value ?: "".toByteArray())
     }
 
     override fun onCharacteristicWrite(
@@ -88,19 +84,17 @@ class BleConnection(val device:BluetoothDevice): BluetoothGattCallback() {
         characteristic: BluetoothGattCharacteristic,
         status: Int
     ) {
-        super.onCharacteristicWrite(gatt, characteristic, status)
-
         val value = String(characteristic.value)
-        CLog.i(TAG, "onCharacteristicWrite ${device.address} write  $value")
+        CLog.i(TAG, "onCharacteristicWrite ${device.address} send ${value.length} bytes")
     }
 
     override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
         if (newState == BluetoothProfile.STATE_CONNECTED) {
             CLog.i(TAG, "device ${device.address} connected")
             gatt.discoverServices()
-        } else if(newState == BluetoothGatt.STATE_DISCONNECTED) {
+        } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
             CLog.i(TAG, "device ${device.address} disconnected")
-            connectState = CONNECT_STATE.DISCONNECTED
+            setState(CONNECT_STATE.DISCONNECTED)
             this.close()
         }
     }
@@ -113,16 +107,27 @@ class BleConnection(val device:BluetoothDevice): BluetoothGattCallback() {
             CLog.i(TAG, "read data ${device.address}")
             gatt.readCharacteristic(characteristic)
         }
-        CLog.i(TAG, "onCharacteristicChanged ${device.address} data  ${String(characteristic.value?:ByteArray(0))}")
+    }
+
+    private fun setState(connectState:CONNECT_STATE) {
+        if (this.connectState != connectState) {
+            this.connectState = connectState
+            if (connectState == CONNECT_STATE.CONNECTED) {
+                listener?.onConnected(this)
+            } else if(connectState == CONNECT_STATE.DISCONNECTED) {
+                listener?.onClosed(this)
+            }
+        }
     }
 
     interface IConnectionListener {
-        fun onReceiveData(connection: BleConnection, data:ByteArray)
+        fun onReceiveData(connection: BleConnection, data: ByteArray)
         fun onClosed(connection: BleConnection)
         fun onConnected(connection: BleConnection)
     }
 
     enum class CONNECT_STATE {
+        INIT,
         CONNECTING,
         CONNECTED,
         DISCONNECTED

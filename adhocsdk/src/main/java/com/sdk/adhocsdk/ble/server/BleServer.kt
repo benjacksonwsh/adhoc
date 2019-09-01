@@ -10,6 +10,7 @@ import android.os.ParcelUuid
 import com.sdk.adhocsdk.ble.BLEConstant
 import com.sdk.common.utils.ContextHolder
 import com.sdk.common.utils.log.CLog
+import kotlin.math.min
 
 class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback() {
     companion object {
@@ -20,23 +21,10 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
     private var gattServer: BluetoothGattServer? = null
 
     private val reader = BleCharacteristicReader(BLEConstant.ID_SERVER_READER)
-    private val writer = BleCharacteristicWriter(BLEConstant.ID_SERVER_WRITER).apply {
-        value = "".toByteArray()
-    }
+    private val writer = BleCharacteristicWriter(BLEConstant.ID_SERVER_WRITER)
+    private val TRANSPORT_PICE = 22
 
     fun setup() {
-        broadcast()
-    }
-
-    fun tearDown() {
-
-    }
-
-    fun setListener(listener: IBleServerListener?) {
-        this.listener = listener
-    }
-
-    fun broadcast(): Boolean {
         val settings = AdvertiseSettings.Builder()
             .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
             .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
@@ -60,8 +48,30 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
             )
         }.build()
         advertiser.startAdvertising(settings, advertiseData, scanResponse, this)
+    }
 
-        return true
+    fun tearDown() {
+        advertiser.stopAdvertising(this)
+        gattServer?.clearServices()
+        gattServer?.close()
+        gattServer = null
+    }
+
+    fun setListener(listener: IBleServerListener?) {
+        this.listener = listener
+    }
+
+    fun sendResponse(device: BluetoothDevice, data: ByteArray): Boolean {
+        writer.value = data
+        return gattServer?.notifyCharacteristicChanged(device, writer, false)?:false
+    }
+
+    fun broadcast(data: ByteArray) {
+        writer.value = data
+        val list = gattServer?.connectedDevices?:return
+        for (d in list) {
+            gattServer?.notifyCharacteristicChanged(d, writer, false)
+        }
     }
 
     override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
@@ -84,11 +94,11 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
                 when (newState) {
                     BluetoothGatt.STATE_CONNECTED -> {
                         CLog.i(TAG,"client connected, device: $device")
-                        listener?.onClientConnected(device.address)
+                        listener?.onClientConnected(device)
                     }
                     BluetoothGatt.STATE_DISCONNECTED -> {
                         CLog.i(TAG,"client disconnected, device: $device")
-                        listener?.onClientDisconnected(device.address)
+                        listener?.onClientDisconnected(device)
                     }
                 }
             }
@@ -102,11 +112,18 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
                 offset: Int,
                 value: ByteArray?
             ) {
-                CLog.i(TAG,"client onCharacteristicWriteRequest, device: $device req:${String(value?:ByteArray(0))}")
-                gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, null)
+                CLog.i(TAG,"client onCharacteristicWriteRequest, offset:$offset device: $device req:${value?.size} bytes")
+                gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, characteristic.value)
 
-                writer.value = "response from server".toByteArray()
-                gattServer?.notifyCharacteristicChanged(device, writer, false)
+                if(null != value){
+                    if (characteristic.value == null) {
+                        characteristic.value = value.copyOf()
+                    } else {
+                        characteristic.value += value
+                    }
+                }
+
+                listener?.onReceiveData(device, characteristic.value)
             }
 
             override fun onCharacteristicReadRequest(device: BluetoothDevice,
@@ -115,9 +132,17 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
                                                      characteristic: BluetoothGattCharacteristic) {
                 super.onCharacteristicReadRequest(device, requestId, offset, characteristic)
 
-                CLog.i(TAG,"onCharacteristicReadRequest, device: $device sending ${String(characteristic.value)}")
+                val v = if (offset == 0) {
+                    characteristic.value
+                } else if (offset < characteristic.value.size) {
+                    characteristic.value.copyOfRange(offset, min(offset+TRANSPORT_PICE, characteristic.value.size))
+                } else {
+                    "".toByteArray()
+                }
+
+                CLog.i(TAG,"onCharacteristicReadRequest, device: $device sending offset:$offset ${characteristic.value.size} bytes")
                 if (gattServer?.sendResponse(device, requestId,
-                        BluetoothGatt.GATT_SUCCESS, offset, characteristic.value) != true) {
+                        BluetoothGatt.GATT_SUCCESS, offset, v) != true) {
                     CLog.w(TAG, "send response to device ${device.name}@${device.address} failed")
                 }
             }
@@ -171,18 +196,12 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
 
     override fun onStartFailure(errorCode: Int) {
         super.onStartFailure(errorCode)
-        stopBroadcast()
-    }
-
-    fun stopBroadcast() {
-        advertiser.stopAdvertising(this)
-        gattServer?.clearServices()
-        gattServer?.close()
-        gattServer = null
+        tearDown()
     }
 
     interface IBleServerListener {
-        fun onClientConnected(deviceId: String)
-        fun onClientDisconnected(deviceId: String)
+        fun onClientConnected(device: BluetoothDevice)
+        fun onClientDisconnected(device: BluetoothDevice)
+        fun onReceiveData(device: BluetoothDevice, data:ByteArray)
     }
 }

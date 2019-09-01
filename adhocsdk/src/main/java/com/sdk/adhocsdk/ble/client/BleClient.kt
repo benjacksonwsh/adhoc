@@ -1,4 +1,5 @@
 package com.sdk.adhocsdk.ble.client
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
@@ -28,6 +29,20 @@ class BleClient(private val scanner: BluetoothLeScanner): ScanCallback(),
         connections[deviceId]?.connect()
     }
 
+    fun disconnectAll() {
+        for (i in connections.values.toList()) {
+            i.close()
+        }
+    }
+
+    fun sendRequest(first: String, req: ByteArray) {
+        if(connections[first]?.send(req) == true){
+            CLog.i(TAG, "send request succeed")
+        } else {
+            CLog.i(TAG, "send request failed")
+        }
+    }
+
     fun getDeviceList():List<String> {
         return connections.keys.toList()
     }
@@ -38,20 +53,20 @@ class BleClient(private val scanner: BluetoothLeScanner): ScanCallback(),
 
     override fun onScanResult(callbackType: Int, result: ScanResult) {
         super.onScanResult(callbackType, result)
+        parseScanResult(result)
+    }
 
+    private fun parseScanResult(result: ScanResult) {
         val record = result.scanRecord
-
         val manufacturer = record?.manufacturerSpecificData?.get(BLEConstant.ADVERTISE_DATA_MANUFACTURER_ID)
         if (manufacturer?.contentEquals(BLEConstant.ADVERTISE_DATA_MANUFACTURER) == true){
             CLog.i(TAG, "device ${result.device.name} ${GsonUtil.toJson(record?.manufacturerSpecificData?:"")}\n ${GsonUtil.toJson(record?.serviceUuids?:"")} ${result.device.address}")
             if (!connections.containsKey(result.device.address)) {
                 val connection = BleConnection(result.device)
                 connection.setListener(this)
-                if (connections.isNotEmpty()) {
-                    connections.values.first().close()
-                    connections.clear()
-                }
-
+                //fixme for demo
+                disconnectAll()
+                connections.clear()
                 connections[result.device.address] = connection
             }
         }
@@ -59,7 +74,7 @@ class BleClient(private val scanner: BluetoothLeScanner): ScanCallback(),
 
     override fun onBatchScanResults(results: MutableList<ScanResult>) {
         results.forEach {
-            CLog.i(TAG, "batch device ${it.device.name} ${it.device.address}")
+            parseScanResult(it)
         }
     }
 
@@ -69,18 +84,21 @@ class BleClient(private val scanner: BluetoothLeScanner): ScanCallback(),
     }
 
     override fun onReceiveData(connection: BleConnection, data: ByteArray) {
-        listener?.onReceiveData(connection.device.address, data)
+        listener?.onReceiveData(connection.device, data)
     }
 
     override fun onClosed(connection: BleConnection) {
-
+        connections.remove(connection.device.address)
+        listener?.onDisconnected()
     }
 
     override fun onConnected(connection: BleConnection) {
-
+        listener?.onConnected()
     }
 
     interface IBleClientListener {
-        fun onReceiveData(deviceId: String, data:ByteArray)
+        fun onReceiveData(device: BluetoothDevice, data:ByteArray)
+        fun onConnected()
+        fun onDisconnected()
     }
 }
