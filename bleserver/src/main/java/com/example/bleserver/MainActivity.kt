@@ -10,6 +10,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import com.sdk.adhocsdk.ble.server.BleServer
 import com.sdk.common.utils.Dispatcher
+import com.sdk.common.utils.log.CLog
 import io.reactivex.disposables.Disposable
 import kotlinx.android.synthetic.main.main_activity.*
 
@@ -60,6 +61,7 @@ class MainActivity: AppCompatActivity(), BleServer.IBleServerListener {
     }
 
     override fun onReceiveData(device: BluetoothDevice, data: ByteArray) {
+        CLog.i("BleServer", "receive from ${device.address} ${String(data)}")
         Dispatcher.mainThread.dispatch {
             val dispose = this.dispose
             if (dispose != null && !dispose.isDisposed) {

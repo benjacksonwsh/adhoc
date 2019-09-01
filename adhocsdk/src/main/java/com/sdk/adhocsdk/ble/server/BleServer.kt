@@ -8,6 +8,7 @@ import android.bluetooth.le.BluetoothLeAdvertiser
 import android.content.Context
 import android.os.ParcelUuid
 import com.sdk.adhocsdk.ble.BLEConstant
+import com.sdk.adhocsdk.ble.client.BLEPackage
 import com.sdk.common.utils.ContextHolder
 import com.sdk.common.utils.log.CLog
 import kotlin.math.min
@@ -115,15 +116,23 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
                 CLog.i(TAG,"client onCharacteristicWriteRequest, offset:$offset device: $device req:${value?.size} bytes")
                 gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, characteristic.value)
 
-                if(null != value){
-                    if (characteristic.value == null) {
-                        characteristic.value = value.copyOf()
-                    } else {
-                        characteristic.value += value
-                    }
+                if (null == value) {
+                    listener?.onReceiveData(device, characteristic.value)
+                    return
                 }
 
-                listener?.onReceiveData(device, characteristic.value)
+                val pkg = BLEPackage().apply {
+                    initDirect(value)
+                }
+
+                when {
+                    pkg.getType() == BLEPackage.PACK_TYPE.END -> {
+                        characteristic.value += pkg.getData()
+                        listener?.onReceiveData(device, characteristic.value)
+                    }
+                    pkg.getType() == BLEPackage.PACK_TYPE.INIT -> characteristic.value = pkg.getData()
+                    else -> characteristic.value += pkg.getData()
+                }
             }
 
             override fun onCharacteristicReadRequest(device: BluetoothDevice,

@@ -5,15 +5,21 @@ import com.sdk.common.utils.ContextHolder
 import com.sdk.common.utils.log.CLog
 import com.sdk.adhocsdk.ble.BLEConstant
 import com.sdk.common.utils.Dispatcher
+import java.io.BufferedReader
+import java.util.*
 
 
 class BleConnection(val device: BluetoothDevice) : BluetoothGattCallback() {
-    private val TAG = "BleConnection"
+    companion object {
+        private const val TAG = "BleConnection"
+    }
+
     private var connectState = CONNECT_STATE.INIT
     private var gatt: BluetoothGatt? = null
     private var listener: IConnectionListener? = null
     private var reader: BluetoothGattCharacteristic? = null
     private var writer: BluetoothGattCharacteristic? = null
+    private var sendingQueue:LinkedList<BLEPackage>? = null
 
     fun connect() {
         if (connectState != CONNECT_STATE.DISCONNECTED) {
@@ -26,7 +32,16 @@ class BleConnection(val device: BluetoothDevice) : BluetoothGattCallback() {
     }
 
     fun send(data: ByteArray): Boolean {
-        writer?.value = data
+        if (data.isEmpty()) {
+            return true
+        }
+        val queue = BLEPackage.split(data)
+        this.sendingQueue = queue
+        return sendPackage(queue.removeAt(0))
+    }
+
+    private fun sendPackage(pkg:BLEPackage): Boolean {
+        writer?.value = pkg.getTypedData()
         return gatt?.writeCharacteristic(writer) == true
     }
 
@@ -84,8 +99,11 @@ class BleConnection(val device: BluetoothDevice) : BluetoothGattCallback() {
         characteristic: BluetoothGattCharacteristic,
         status: Int
     ) {
-        val value = String(characteristic.value)
-        CLog.i(TAG, "onCharacteristicWrite ${device.address} send ${value.length} bytes")
+        val sendingQueue = this.sendingQueue
+        if (sendingQueue?.isNotEmpty() == true) {
+            sendPackage(sendingQueue.removeAt(0))
+        }
+        CLog.i(TAG, "onCharacteristicWrite ${device.address} send ${characteristic.value?.size} bytes")
     }
 
     override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
