@@ -1,8 +1,8 @@
-package com.sdk.adhocsdk.bleDiscover.server
+package com.sdk.adhocsdk.ble.server
 
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
-import com.sdk.adhocsdk.bleDiscover.BLEConstant
+import com.sdk.adhocsdk.ble.BLEConstant
 import java.util.*
 
 class BleCharacteristicReader(uuid:UUID): BluetoothGattCharacteristic(uuid,

@@ -1,9 +1,9 @@
-package com.sdk.adhocsdk.bleDiscover.client
+package com.sdk.adhocsdk.ble.client
 
 import android.bluetooth.*
 import com.sdk.common.utils.ContextHolder
 import com.sdk.common.utils.log.CLog
-import com.sdk.adhocsdk.bleDiscover.BLEConstant
+import com.sdk.adhocsdk.ble.BLEConstant
 import com.sdk.common.utils.Dispatcher
 
 
@@ -114,42 +114,6 @@ class BleConnection(val device:BluetoothDevice): BluetoothGattCallback() {
             gatt.readCharacteristic(characteristic)
         }
         CLog.i(TAG, "onCharacteristicChanged ${device.address} data  ${String(characteristic.value?:ByteArray(0))}")
-    }
-
-    override fun onReadRemoteRssi(gatt: BluetoothGatt, rssi: Int, status: Int) {
-        super.onReadRemoteRssi(gatt, rssi, status)
-    }
-
-    override fun onDescriptorRead(
-        gatt: BluetoothGatt,
-        descriptor: BluetoothGattDescriptor?,
-        status: Int
-    ) {
-        super.onDescriptorRead(gatt, descriptor, status)
-    }
-
-    override fun onDescriptorWrite(
-        gatt: BluetoothGatt,
-        descriptor: BluetoothGattDescriptor?,
-        status: Int
-    ) {
-        super.onDescriptorWrite(gatt, descriptor, status)
-    }
-
-    override fun onReliableWriteCompleted(gatt: BluetoothGatt, status: Int) {
-        super.onReliableWriteCompleted(gatt, status)
-    }
-
-    override fun onPhyRead(gatt: BluetoothGatt, txPhy: Int, rxPhy: Int, status: Int) {
-        super.onPhyRead(gatt, txPhy, rxPhy, status)
-    }
-
-    override fun onPhyUpdate(gatt: BluetoothGatt, txPhy: Int, rxPhy: Int, status: Int) {
-        super.onPhyUpdate(gatt, txPhy, rxPhy, status)
-    }
-
-    override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
-        super.onMtuChanged(gatt, mtu, status)
     }
 
     interface IConnectionListener {

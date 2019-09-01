@@ -1,8 +1,8 @@
-package com.sdk.adhocsdk.bleDiscover.client
+package com.sdk.adhocsdk.ble.client
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
-import com.sdk.adhocsdk.bleDiscover.BLEConstant
+import com.sdk.adhocsdk.ble.BLEConstant
 import com.sdk.common.utils.GsonUtil
 import com.sdk.common.utils.log.CLog
 

@@ -1,4 +1,4 @@
-package com.sdk.adhocsdk.bleDiscover
+package com.sdk.adhocsdk.ble
 
 import java.util.*
 

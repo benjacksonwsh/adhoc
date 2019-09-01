@@ -1,8 +1,8 @@
-package com.sdk.adhocsdk.bleDiscover
+package com.sdk.adhocsdk.ble
 
 import android.bluetooth.BluetoothAdapter
-import com.sdk.adhocsdk.bleDiscover.client.BleClient
-import com.sdk.adhocsdk.bleDiscover.server.BleServer
+import com.sdk.adhocsdk.ble.client.BleClient
+import com.sdk.adhocsdk.ble.server.BleServer
 import com.sdk.common.utils.ble.BleUtil
 
 class BleController: BleUtil.IBleStateNotify {

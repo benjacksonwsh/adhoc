@@ -6,7 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.wifi.p2p.WifiP2pManager
 import android.os.Looper
-import com.sdk.adhocsdk.bleDiscover.BleController
+import com.sdk.adhocsdk.ble.BleController
 import com.sdk.adhocsdk.p2pdiscover.WiFiP2PBroadcaster
 import com.sdk.adhocsdk.p2pdiscover.WiFiP2PReceiver
 import com.sdk.annotation.ModuleService

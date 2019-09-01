@@ -7,7 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
-import com.sdk.adhocsdk.bleDiscover.server.BleServer
+import com.sdk.adhocsdk.ble.server.BleServer
 import com.sdk.common.utils.Dispatcher
 import kotlinx.android.synthetic.main.main_activity.*
 

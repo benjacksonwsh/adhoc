@@ -1,4 +1,4 @@
-package com.sdk.adhocsdk.bleDiscover.server
+package com.sdk.adhocsdk.ble.server
 
 import android.bluetooth.*
 import android.bluetooth.le.AdvertiseCallback
@@ -7,7 +7,7 @@ import android.bluetooth.le.AdvertiseSettings
 import android.bluetooth.le.BluetoothLeAdvertiser
 import android.content.Context
 import android.os.ParcelUuid
-import com.sdk.adhocsdk.bleDiscover.BLEConstant
+import com.sdk.adhocsdk.ble.BLEConstant
 import com.sdk.common.utils.ContextHolder
 import com.sdk.common.utils.log.CLog
 
