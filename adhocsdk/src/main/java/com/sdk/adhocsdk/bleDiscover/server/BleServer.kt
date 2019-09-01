@@ -1,4 +1,4 @@
-package com.sdk.adhocsdk.bleDiscover
+package com.sdk.adhocsdk.bleDiscover.server
 
 import android.bluetooth.*
 import android.bluetooth.le.AdvertiseCallback
@@ -7,8 +7,8 @@ import android.bluetooth.le.AdvertiseSettings
 import android.bluetooth.le.BluetoothLeAdvertiser
 import android.content.Context
 import android.os.ParcelUuid
+import com.sdk.adhocsdk.bleDiscover.BLEConstant
 import com.sdk.common.utils.ContextHolder
-import com.sdk.common.utils.Dispatcher
 import com.sdk.common.utils.log.CLog
 
 class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback() {
@@ -16,17 +16,12 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
         private const val TAG = "BleServer"
     }
 
-    private var listener:IBleServerListener? = null
+    private var listener: IBleServerListener? = null
     private var gattServer: BluetoothGattServer? = null
-    private val characteristic = BluetoothGattCharacteristic(BLEConstant.ID_CHARACTERISTIC,
-        BluetoothGattCharacteristic.PROPERTY_READ,
-        BluetoothGattCharacteristic.PERMISSION_READ).apply {
-        value = "test data from server".toByteArray()
-    }
 
-    init {
-        characteristic.addDescriptor(BluetoothGattDescriptor(BLEConstant.ID_DESCRIPTOR,
-            BluetoothGattDescriptor.PERMISSION_READ))
+    private val reader = BleCharacteristicReader(BLEConstant.ID_SERVER_READER)
+    private val writer = BleCharacteristicWriter(BLEConstant.ID_SERVER_WRITER).apply {
+        value = "".toByteArray()
     }
 
     fun setup() {
@@ -37,7 +32,7 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
 
     }
 
-    fun setListener(listener:IBleServerListener?) {
+    fun setListener(listener: IBleServerListener?) {
         this.listener = listener
     }
 
@@ -51,14 +46,18 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
 
         val advertiseData = AdvertiseData.Builder().apply {
             addServiceUuid(ParcelUuid(BLEConstant.ID_ADVERTISE_DATA))
-            addManufacturerData(BLEConstant.ADVERTISE_DATA_MANUFACTURER_ID,
-                BLEConstant.ADVERTISE_DATA_MANUFACTURER)
+            addManufacturerData(
+                BLEConstant.ADVERTISE_DATA_MANUFACTURER_ID,
+                BLEConstant.ADVERTISE_DATA_MANUFACTURER
+            )
         }.build()
 
         val scanResponse = AdvertiseData.Builder().apply {
             addServiceUuid(ParcelUuid(BLEConstant.ID_SCAN_RESPONSE))
-            addManufacturerData(BLEConstant.SCAN_RESPONSE_MANUFACTURER_ID,
-                BLEConstant.SCAN_RESPONSE_MANUFACTURER)
+            addManufacturerData(
+                BLEConstant.SCAN_RESPONSE_MANUFACTURER_ID,
+                BLEConstant.SCAN_RESPONSE_MANUFACTURER
+            )
         }.build()
         advertiser.startAdvertising(settings, advertiseData, scanResponse, this)
 
@@ -95,24 +94,19 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
             }
 
             override fun onCharacteristicWriteRequest(
-                device: BluetoothDevice?,
+                device: BluetoothDevice,
                 requestId: Int,
-                characteristic: BluetoothGattCharacteristic?,
+                characteristic: BluetoothGattCharacteristic,
                 preparedWrite: Boolean,
                 responseNeeded: Boolean,
                 offset: Int,
                 value: ByteArray?
             ) {
-                super.onCharacteristicWriteRequest(
-                    device,
-                    requestId,
-                    characteristic,
-                    preparedWrite,
-                    responseNeeded,
-                    offset,
-                    value
-                )
-                CLog.i(TAG,"client onCharacteristicWriteRequest, device: $device")
+                CLog.i(TAG,"client onCharacteristicWriteRequest, device: $device req:${String(value?:ByteArray(0))}")
+                gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, null)
+
+                writer.value = "response from server".toByteArray()
+                gattServer?.notifyCharacteristicChanged(device, writer, false)
             }
 
             override fun onCharacteristicReadRequest(device: BluetoothDevice,
@@ -120,25 +114,56 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
                                                      offset: Int,
                                                      characteristic: BluetoothGattCharacteristic) {
                 super.onCharacteristicReadRequest(device, requestId, offset, characteristic)
-                CLog.i(TAG,"onCharacteristicReadRequest, device: $device")
-                val data = if (characteristic.value == null) {
-                    "".toByteArray()
-                } else {
-                    characteristic.value.copyOfRange(offset, characteristic.value.size)
-                }
 
-                CLog.i(TAG,"onCharacteristicReadRequest, device: $device sending ${String(data)}")
+                CLog.i(TAG,"onCharacteristicReadRequest, device: $device sending ${String(characteristic.value)}")
                 if (gattServer?.sendResponse(device, requestId,
-                        BluetoothGatt.GATT_SUCCESS, offset, data) != true) {
+                        BluetoothGatt.GATT_SUCCESS, offset, characteristic.value) != true) {
                     CLog.w(TAG, "send response to device ${device.name}@${device.address} failed")
                 }
+            }
+
+            override fun onDescriptorWriteRequest(
+                device: BluetoothDevice?,
+                requestId: Int,
+                descriptor: BluetoothGattDescriptor?,
+                preparedWrite: Boolean,
+                responseNeeded: Boolean,
+                offset: Int,
+                value: ByteArray?
+            ) {
+                gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value)
+            }
+
+            override fun onDescriptorReadRequest(
+                device: BluetoothDevice?,
+                requestId: Int,
+                offset: Int,
+                descriptor: BluetoothGattDescriptor
+            ) {
+                gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, null)
+            }
+
+            override fun onNotificationSent(device: BluetoothDevice, status: Int) {
+                super.onNotificationSent(device, status)
+                CLog.i(TAG, "onNotificationSent ${device.address} $status")
+            }
+
+            override fun onExecuteWrite(
+                device: BluetoothDevice,
+                requestId: Int,
+                execute: Boolean
+            ) {
+                super.onExecuteWrite(device, requestId, execute)
+                CLog.i(TAG, "onExecuteWrite ${device.address}")
             }
         })
 
         this@BleServer.gattServer = gattServer
-        val gattService = BluetoothGattService(BLEConstant.ID_SERVICE,
+        val gattService = BluetoothGattService(
+            BLEConstant.ID_SERVICE,
             BluetoothGattService.SERVICE_TYPE_PRIMARY).apply {
-            addCharacteristic(characteristic)
+            addCharacteristic(writer)
+            addCharacteristic(reader)
         }
 
         gattServer.addService(gattService)

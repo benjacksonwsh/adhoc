@@ -1,14 +1,16 @@
-package com.sdk.adhocsdk.bleDiscover
+package com.sdk.adhocsdk.bleDiscover.client
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
+import com.sdk.adhocsdk.bleDiscover.BLEConstant
 import com.sdk.common.utils.GsonUtil
 import com.sdk.common.utils.log.CLog
 
-class BleClient(private val scanner: BluetoothLeScanner): ScanCallback(), BleConnection.IConnectionListener {
+class BleClient(private val scanner: BluetoothLeScanner): ScanCallback(),
+    BleConnection.IConnectionListener {
     private val TAG = "BleClient"
     private val connections = HashMap<String, BleConnection>()
-    private var listener:IBleClientListener? = null
+    private var listener: IBleClientListener? = null
 
     fun setup() {
         scanner.startScan(this)
@@ -18,7 +20,7 @@ class BleClient(private val scanner: BluetoothLeScanner): ScanCallback(), BleCon
         scanner.stopScan(this)
     }
 
-    fun setListener( listener:IBleClientListener ) {
+    fun setListener( listener: IBleClientListener) {
         this.listener = listener
     }
 

@@ -1,12 +1,13 @@
 package com.sdk.adhocsdk.bleDiscover
 
 import android.bluetooth.BluetoothAdapter
-import android.content.Context
+import com.sdk.adhocsdk.bleDiscover.client.BleClient
+import com.sdk.adhocsdk.bleDiscover.server.BleServer
 import com.sdk.common.utils.ble.BleUtil
 
 class BleController: BleUtil.IBleStateNotify {
-    private var bleClient:BleClient? = null
-    private var bleServer:BleServer? = null
+    private var bleClient: BleClient? = null
+    private var bleServer: BleServer? = null
 
     fun setup() {
         BleUtil.stateNotify.addListener(this)
@@ -25,12 +26,14 @@ class BleController: BleUtil.IBleStateNotify {
         if (BleUtil.isSupport()) {
             if (BleUtil.isEnable() && BleUtil.isSupportAdvertiser()) {
                 this.bleServer?.tearDown()
-                val bleServer = BleServer(BluetoothAdapter.getDefaultAdapter().bluetoothLeAdvertiser)
+                val bleServer =
+                    BleServer(BluetoothAdapter.getDefaultAdapter().bluetoothLeAdvertiser)
                 bleServer.setup()
                 this.bleServer = bleServer
 
                 this.bleClient?.tearDown()
-                val bleClient = BleClient(BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner)
+                val bleClient =
+                    BleClient(BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner)
                 bleClient.setup()
                 this.bleClient = bleClient
                 return

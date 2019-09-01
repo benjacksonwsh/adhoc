@@ -8,13 +8,14 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
-import com.sdk.adhocsdk.bleDiscover.BleClient
+import com.sdk.adhocsdk.bleDiscover.client.BleClient
 import com.sdk.common.utils.Dispatcher
 import kotlinx.android.synthetic.main.main_activity.*
 
 class MainActivity:AppCompatActivity(), BleClient.IBleClientListener {
 
-    private val bleClient = BleClient(BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner)
+    private val bleClient =
+        BleClient(BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.main_activity)
