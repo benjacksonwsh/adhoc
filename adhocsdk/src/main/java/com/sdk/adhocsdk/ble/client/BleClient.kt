@@ -60,12 +60,10 @@ class BleClient(private val scanner: BluetoothLeScanner): ScanCallback(),
         val record = result.scanRecord
         val manufacturer = record?.manufacturerSpecificData?.get(BLEConstant.ADVERTISE_DATA_MANUFACTURER_ID)
         if (manufacturer?.contentEquals(BLEConstant.ADVERTISE_DATA_MANUFACTURER) == true){
-            CLog.i(TAG, "device ${result.device.name} ${GsonUtil.toJson(record?.manufacturerSpecificData?:"")}\n ${GsonUtil.toJson(record?.serviceUuids?:"")} ${result.device.address}")
+            CLog.i(TAG, "device ${result.device.address} scanned")
             if (!connections.containsKey(result.device.address)) {
                 val connection = BleConnection(result.device)
                 connection.setListener(this)
-                //fixme for demo
-                disconnectAll()
                 connections.clear()
                 connections[result.device.address] = connection
             }

@@ -26,6 +26,7 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
     private val TRANSPORT_PICE = 22
 
     fun setup() {
+        tearDown()
         val settings = AdvertiseSettings.Builder()
             .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
             .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
