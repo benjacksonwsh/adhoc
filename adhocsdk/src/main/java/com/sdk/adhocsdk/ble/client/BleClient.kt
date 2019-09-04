@@ -29,6 +29,10 @@ class BleClient(private val scanner: BluetoothLeScanner): ScanCallback(),
         connections[deviceId]?.connect()
     }
 
+    fun shutdown(deviceId: String) {
+        connections[deviceId]?.close()
+    }
+
     fun disconnectAll() {
         for (i in connections.values.toList()) {
             i.close()
