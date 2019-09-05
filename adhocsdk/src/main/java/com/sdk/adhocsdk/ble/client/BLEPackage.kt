@@ -24,7 +24,7 @@ class BLEPackage {
 
     fun init(data:ByteArray, fromIndex:Int, toIndex:Int) {
         if (fromIndex == 0 && data.size > toIndex) {
-            array = ByteArray(20)
+            array = ByteArray(MAX_SIZE + 1)
             array[0] = PACK_TYPE.INIT.v
             System.arraycopy(data, fromIndex, array, fromIndex+1, toIndex-fromIndex)
         } else if(data.size > toIndex){

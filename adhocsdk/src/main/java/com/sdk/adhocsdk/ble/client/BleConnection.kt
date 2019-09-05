@@ -95,7 +95,7 @@ class BleConnection(var device: BluetoothDevice, val serverId: String, private v
                     } else if (characteristic.uuid == BLEConstant.ID_CLIENT_READER) {
                         this.reader = characteristic
                         gatt.setCharacteristicNotification(characteristic, true)
-                        gatt.readCharacteristic(reader)
+                        //gatt.readCharacteristic(reader)
                     }
                 }
             }
@@ -155,9 +155,11 @@ class BleConnection(var device: BluetoothDevice, val serverId: String, private v
         if (this.device == device) {
             return
         }
-        close()
-
         this.device = device
+
+        if (connectState != CONNECT_STATE.CONNECTED && gatt != null) {
+            close()
+        }
     }
 
     override fun onConnectionFinished(serverId: String) {

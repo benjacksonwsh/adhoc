@@ -53,7 +53,7 @@ class MainActivity: AppCompatActivity(), BleServer.IBleServerListener {
             val text = main_read_text.text?.toString()?:""
             val log = "$text\n${System.currentTimeMillis()} ${device.address} connected"
             main_read_text.text = log
-            //bleServer.sendResponse(device, "hello".toByteArray())
+            bleServer.sendResponse(device, "hello".toByteArray())
         }
     }
 

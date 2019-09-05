@@ -11,23 +11,21 @@ import com.sdk.adhocsdk.ble.BLEConstant
 import com.sdk.adhocsdk.ble.client.BLEPackage
 import com.sdk.common.utils.ContextHolder
 import com.sdk.common.utils.RandomUtil
-import com.sdk.common.utils.base64Encode
 import com.sdk.common.utils.log.CLog
 import kotlin.math.min
 
 class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback() {
     companion object {
         private const val TAG = "BleServer"
+        private const val TRANSPORT_UNIT_SIZE = 22
     }
 
     val serverId = RandomUtil.getRandom(6)
     private var listener: IBleServerListener? = null
     private var gattServer: BluetoothGattServer? = null
     private val reader = BleCharacteristicReader(BLEConstant.ID_SERVER_READER)
-    private val writer = BleCharacteristicWriter(BLEConstant.ID_SERVER_WRITER).apply {
-        value = "hello from server".toByteArray()
-    }
-    private val TRANSPORT_PICE = 22
+    private val writer = BleCharacteristicWriter(BLEConstant.ID_SERVER_WRITER)
+
 
     fun setup() {
         tearDown()
@@ -149,7 +147,7 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
                 val v = if (offset == 0) {
                     characteristic.value
                 } else if (offset < characteristic.value.size) {
-                    characteristic.value.copyOfRange(offset, min(offset+TRANSPORT_PICE, characteristic.value.size))
+                    characteristic.value.copyOfRange(offset, min(offset+TRANSPORT_UNIT_SIZE, characteristic.value.size))
                 } else {
                     "".toByteArray()
                 }
