@@ -123,11 +123,12 @@ class BleConnection(var device: BluetoothDevice, val serverId: String, private v
         characteristic: BluetoothGattCharacteristic,
         status: Int
     ) {
+        CLog.i(TAG, "onCharacteristicWrite ${device.address} send ${characteristic.value?.size} bytes")
+
         val sendingQueue = this.sendingQueue
         if (sendingQueue?.isNotEmpty() == true) {
             sendPackage(sendingQueue.removeAt(0))
         }
-        CLog.i(TAG, "onCharacteristicWrite ${device.address} send ${characteristic.value?.size} bytes")
     }
 
     override fun onCharacteristicChanged(
