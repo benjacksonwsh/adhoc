@@ -10,6 +10,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import com.sdk.adhocsdk.ble.server.BleServer
 import com.sdk.common.utils.Dispatcher
+import com.sdk.common.utils.base64Encode
+import com.sdk.common.utils.format
 import com.sdk.common.utils.log.CLog
 import io.reactivex.disposables.Disposable
 import kotlinx.android.synthetic.main.main_activity.*
@@ -41,6 +43,9 @@ class MainActivity: AppCompatActivity(), BleServer.IBleServerListener {
             bleServer.tearDown()
             bleServer.setup()
         }
+
+        val title = "BLE Server:${bleServer.serverId.base64Encode().format()}"
+        main_title.text = title
     }
 
     override fun onClientConnected(device: BluetoothDevice) {
@@ -48,7 +53,7 @@ class MainActivity: AppCompatActivity(), BleServer.IBleServerListener {
             val text = main_read_text.text?.toString()?:""
             val log = "$text\n${System.currentTimeMillis()} ${device.address} connected"
             main_read_text.text = log
-            bleServer.sendResponse(device, "hello".toByteArray())
+            //bleServer.sendResponse(device, "hello".toByteArray())
         }
     }
 

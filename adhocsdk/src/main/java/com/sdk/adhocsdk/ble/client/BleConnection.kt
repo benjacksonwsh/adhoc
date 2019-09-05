@@ -4,31 +4,56 @@ import android.bluetooth.*
 import com.sdk.common.utils.ContextHolder
 import com.sdk.common.utils.log.CLog
 import com.sdk.adhocsdk.ble.BLEConstant
-import com.sdk.common.utils.Dispatcher
-import java.io.BufferedReader
 import java.util.*
 
 
-class BleConnection(val device: BluetoothDevice) : BluetoothGattCallback() {
+class BleConnection(var device: BluetoothDevice, val serverId: String, private val listener: IConnectionListener)
+    : BluetoothGattCallback(), BleConnectingControl.IConnectChangedSignal {
     companion object {
         private const val TAG = "BleConnection"
+        private val connectSignal = BleConnectingControl()
     }
 
     private var connectState = CONNECT_STATE.INIT
     private var gatt: BluetoothGatt? = null
-    private var listener: IConnectionListener? = null
     private var reader: BluetoothGattCharacteristic? = null
     private var writer: BluetoothGattCharacteristic? = null
     private var sendingQueue:LinkedList<BLEPackage>? = null
 
     fun connect() {
-        if (connectState != CONNECT_STATE.DISCONNECTED) {
+        if (connectState != CONNECT_STATE.DISCONNECTED
+            && connectState != CONNECT_STATE.INIT) {
             return
         }
 
+        if (connectSignal.isConnecting()) {
+            connectSignal.signal.addListener(this)
+            connectState = CONNECT_STATE.INIT
+            return
+        }
+
+        connectSignal.start(serverId)
         connectState = CONNECT_STATE.CONNECTING
         CLog.i(TAG, "connecting ble device name:${device.name} address:${device.address}")
         gatt = device.connectGatt(ContextHolder.CONTEXT, false, this)
+    }
+
+    override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+        if (newState == BluetoothProfile.STATE_CONNECTED) {
+            CLog.i(TAG, "device ${device.address} connected")
+            connectSignal.signal.removeListener(this)
+            connectSignal.finished(serverId)
+            gatt.discoverServices()
+        } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
+            CLog.i(TAG, "device ${device.address} disconnected")
+
+            if (CONNECT_STATE.DISCONNECTED != connectState) {
+                setState(CONNECT_STATE.DISCONNECTED)
+                this.close()
+            }
+
+            connectSignal.finished(serverId)
+        }
     }
 
     fun send(data: ByteArray): Boolean {
@@ -55,10 +80,8 @@ class BleConnection(val device: BluetoothDevice) : BluetoothGattCallback() {
         writer = null
         reader = null
         connectState = CONNECT_STATE.DISCONNECTED
-    }
 
-    fun setListener(listener: IConnectionListener) {
-        this.listener = listener
+        connectSignal.signal.removeListener(this)
     }
 
     override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
@@ -72,6 +95,7 @@ class BleConnection(val device: BluetoothDevice) : BluetoothGattCallback() {
                     } else if (characteristic.uuid == BLEConstant.ID_CLIENT_READER) {
                         this.reader = characteristic
                         gatt.setCharacteristicNotification(characteristic, true)
+                        gatt.readCharacteristic(reader)
                     }
                 }
             }
@@ -91,7 +115,7 @@ class BleConnection(val device: BluetoothDevice) : BluetoothGattCallback() {
     ) {
         val value = characteristic.value
         CLog.i(TAG, "onCharacteristicRead ${device.address} recieved  ${value.size} bytes")
-        listener?.onReceiveData(this, characteristic.value ?: "".toByteArray())
+        listener.onReceiveData(this, characteristic.value ?: "".toByteArray())
     }
 
     override fun onCharacteristicWrite(
@@ -104,17 +128,6 @@ class BleConnection(val device: BluetoothDevice) : BluetoothGattCallback() {
             sendPackage(sendingQueue.removeAt(0))
         }
         CLog.i(TAG, "onCharacteristicWrite ${device.address} send ${characteristic.value?.size} bytes")
-    }
-
-    override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
-        if (newState == BluetoothProfile.STATE_CONNECTED) {
-            CLog.i(TAG, "device ${device.address} connected")
-            gatt.discoverServices()
-        } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
-            CLog.i(TAG, "device ${device.address} disconnected")
-            setState(CONNECT_STATE.DISCONNECTED)
-            this.close()
-        }
     }
 
     override fun onCharacteristicChanged(
@@ -131,10 +144,25 @@ class BleConnection(val device: BluetoothDevice) : BluetoothGattCallback() {
         if (this.connectState != connectState) {
             this.connectState = connectState
             if (connectState == CONNECT_STATE.CONNECTED) {
-                listener?.onConnected(this)
+                listener.onConnected(this)
             } else if(connectState == CONNECT_STATE.DISCONNECTED) {
-                listener?.onClosed(this)
+                listener.onClosed(this)
             }
+        }
+    }
+
+    fun updateDevice(device: BluetoothDevice) {
+        if (this.device == device) {
+            return
+        }
+        close()
+
+        this.device = device
+    }
+
+    override fun onConnectionFinished(serverId: String) {
+        if (this.serverId != serverId && connectState == CONNECT_STATE.INIT) {
+            connect()
         }
     }
 

@@ -10,6 +10,8 @@ import android.os.ParcelUuid
 import com.sdk.adhocsdk.ble.BLEConstant
 import com.sdk.adhocsdk.ble.client.BLEPackage
 import com.sdk.common.utils.ContextHolder
+import com.sdk.common.utils.RandomUtil
+import com.sdk.common.utils.base64Encode
 import com.sdk.common.utils.log.CLog
 import kotlin.math.min
 
@@ -18,11 +20,13 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
         private const val TAG = "BleServer"
     }
 
+    val serverId = RandomUtil.getRandom(6)
     private var listener: IBleServerListener? = null
     private var gattServer: BluetoothGattServer? = null
-
     private val reader = BleCharacteristicReader(BLEConstant.ID_SERVER_READER)
-    private val writer = BleCharacteristicWriter(BLEConstant.ID_SERVER_WRITER)
+    private val writer = BleCharacteristicWriter(BLEConstant.ID_SERVER_WRITER).apply {
+        value = "hello from server".toByteArray()
+    }
     private val TRANSPORT_PICE = 22
 
     fun setup() {
@@ -46,7 +50,7 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
             addServiceUuid(ParcelUuid(BLEConstant.ID_SCAN_RESPONSE))
             addManufacturerData(
                 BLEConstant.SCAN_RESPONSE_MANUFACTURER_ID,
-                BLEConstant.SCAN_RESPONSE_MANUFACTURER
+                serverId
             )
         }.build()
         advertiser.startAdvertising(settings, advertiseData, scanResponse, this)
