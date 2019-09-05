@@ -17,19 +17,20 @@ import com.sdk.common.utils.log.CLog
 import com.sdk.common.utils.wifi.WiFiUtil
 
 @ModuleService
-class AdHocSDK: WiFiP2PReceiver.IWiFiDeviceNotify {
+class AdHocSDK : WiFiP2PReceiver.IWiFiDeviceNotify {
     private val TAG = "AdHocSDK"
-    private val wifiP2PManager: WifiP2pManager = ContextHolder.CONTEXT.getSystemService (Context.WIFI_P2P_SERVICE) as WifiP2pManager
+    private val wifiP2PManager: WifiP2pManager =
+        ContextHolder.CONTEXT.getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
     private lateinit var channel: WifiP2pManager.Channel
 
-    private lateinit var wiFiP2PHotspotManager:WiFiP2PHotspotManager
-    private lateinit var wiFiP2PBroadcaster:WiFiP2PBroadcaster
-    private lateinit var wiFiP2PReceiver:WiFiP2PReceiver
+    private lateinit var wiFiP2PHotspotManager: WiFiP2PHotspotManager
+    private lateinit var wiFiP2PBroadcaster: WiFiP2PBroadcaster
+    private lateinit var wiFiP2PReceiver: WiFiP2PReceiver
     private val bleController: BleController = BleController()
 
     private val p2pStateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            when(intent?.action) {
+            when (intent?.action) {
                 WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION -> {
                     val state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1)
                     if (state == WifiP2pManager.WIFI_P2P_STATE_ENABLED) {
@@ -51,7 +52,7 @@ class AdHocSDK: WiFiP2PReceiver.IWiFiDeviceNotify {
     }
 
     private fun doInit() {
-        channel = wifiP2PManager.initialize(ContextHolder.CONTEXT, Looper.getMainLooper()){
+        channel = wifiP2PManager.initialize(ContextHolder.CONTEXT, Looper.getMainLooper()) {
             CLog.i("AdHocSDK", "doInit redo")
             doInit()
         }
@@ -82,12 +83,14 @@ class AdHocSDK: WiFiP2PReceiver.IWiFiDeviceNotify {
                     wiFiP2PHotspotManager.enableHotspot {
                         broadcastMyAdHocState()
                     }
-                },1000)
+                }, 1000)
                 return@getHotspotInfo
             }
 
-            wiFiP2PBroadcaster.broadcast(hotspot.ssid,
-                hotspot.passwd, hotspot.ipV6Addr) {
+            wiFiP2PBroadcaster.broadcast(
+                hotspot.ssid,
+                hotspot.passwd, hotspot.ipV6Addr
+            ) {
                 CLog.i(TAG, "broadcast result:$it")
             }
         }

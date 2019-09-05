@@ -27,6 +27,6 @@ class BleConnectingControl {
     }
 
     interface IConnectChangedSignal {
-        fun onConnectionFinished(serverId:String)
+        fun onConnectionFinished(serverId: String)
     }
 }

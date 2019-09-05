@@ -7,33 +7,34 @@ import com.sdk.adhocsdk.ble.BLEConstant
 import java.util.*
 
 
-class BleConnection(var device: BluetoothDevice, val serverId: String, private val listener: IConnectionListener)
-    : BluetoothGattCallback(), BleConnectingControl.IConnectChangedSignal {
+class BleConnection(var device: BluetoothDevice, val serverId: String, private val listener: IConnectionListener) :
+    BluetoothGattCallback(), BleConnectingControl.IConnectChangedSignal {
     companion object {
         private const val TAG = "BleConnection"
         private val connectSignal = BleConnectingControl()
     }
 
-    private var connectState = CONNECT_STATE.INIT
+    private var connectState = ConnectState.INIT
     private var gatt: BluetoothGatt? = null
     private var reader: BluetoothGattCharacteristic? = null
     private var writer: BluetoothGattCharacteristic? = null
-    private var sendingQueue:LinkedList<BLEPackage>? = null
+    private var sendingQueue: LinkedList<BLEPackage>? = null
 
     fun connect() {
-        if (connectState != CONNECT_STATE.DISCONNECTED
-            && connectState != CONNECT_STATE.INIT) {
+        if (connectState != ConnectState.DISCONNECTED
+            && connectState != ConnectState.INIT
+        ) {
             return
         }
 
         if (connectSignal.isConnecting()) {
             connectSignal.signal.addListener(this)
-            connectState = CONNECT_STATE.INIT
+            connectState = ConnectState.QUEUED
             return
         }
 
         connectSignal.start(serverId)
-        connectState = CONNECT_STATE.CONNECTING
+        connectState = ConnectState.CONNECTING
         CLog.i(TAG, "connecting ble device name:${device.name} address:${device.address}")
         gatt = device.connectGatt(ContextHolder.CONTEXT, false, this)
     }
@@ -47,8 +48,8 @@ class BleConnection(var device: BluetoothDevice, val serverId: String, private v
         } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
             CLog.i(TAG, "device ${device.address} disconnected")
 
-            if (CONNECT_STATE.DISCONNECTED != connectState) {
-                setState(CONNECT_STATE.DISCONNECTED)
+            if (ConnectState.DISCONNECTED != connectState) {
+                setState(ConnectState.DISCONNECTED)
                 this.close()
             }
 
@@ -65,12 +66,12 @@ class BleConnection(var device: BluetoothDevice, val serverId: String, private v
         return sendPackage(queue.removeAt(0))
     }
 
-    private fun sendPackage(pkg:BLEPackage): Boolean {
+    private fun sendPackage(pkg: BLEPackage): Boolean {
         writer?.value = pkg.getTypedData()
         return gatt?.writeCharacteristic(writer) == true
     }
 
-    fun getState(): CONNECT_STATE {
+    fun getState(): ConnectState {
         return connectState
     }
 
@@ -79,7 +80,7 @@ class BleConnection(var device: BluetoothDevice, val serverId: String, private v
         gatt = null
         writer = null
         reader = null
-        connectState = CONNECT_STATE.DISCONNECTED
+        connectState = ConnectState.DISCONNECTED
 
         connectSignal.signal.removeListener(this)
     }
@@ -105,7 +106,7 @@ class BleConnection(var device: BluetoothDevice, val serverId: String, private v
             close()
             return
         }
-        setState(CONNECT_STATE.CONNECTED)
+        setState(ConnectState.CONNECTED)
     }
 
     override fun onCharacteristicRead(
@@ -141,12 +142,12 @@ class BleConnection(var device: BluetoothDevice, val serverId: String, private v
         }
     }
 
-    private fun setState(connectState:CONNECT_STATE) {
+    private fun setState(connectState: ConnectState) {
         if (this.connectState != connectState) {
             this.connectState = connectState
-            if (connectState == CONNECT_STATE.CONNECTED) {
+            if (connectState == ConnectState.CONNECTED) {
                 listener.onConnected(this)
-            } else if(connectState == CONNECT_STATE.DISCONNECTED) {
+            } else if (connectState == ConnectState.DISCONNECTED) {
                 listener.onClosed(this)
             }
         }
@@ -158,13 +159,15 @@ class BleConnection(var device: BluetoothDevice, val serverId: String, private v
         }
         this.device = device
 
-        if (connectState != CONNECT_STATE.CONNECTED && gatt != null) {
+        if (connectState != ConnectState.CONNECTED && gatt != null) {
             close()
         }
     }
 
     override fun onConnectionFinished(serverId: String) {
-        if (this.serverId != serverId && connectState == CONNECT_STATE.INIT) {
+        if (this.serverId != serverId
+            && connectState == ConnectState.QUEUED
+        ) {
             connect()
         }
     }
@@ -175,8 +178,9 @@ class BleConnection(var device: BluetoothDevice, val serverId: String, private v
         fun onConnected(connection: BleConnection)
     }
 
-    enum class CONNECT_STATE {
+    enum class ConnectState {
         INIT,
+        QUEUED,
         CONNECTING,
         CONNECTED,
         DISCONNECTED

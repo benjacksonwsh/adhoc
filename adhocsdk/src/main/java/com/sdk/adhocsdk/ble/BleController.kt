@@ -5,7 +5,7 @@ import com.sdk.adhocsdk.ble.client.BleClient
 import com.sdk.adhocsdk.ble.server.BleServer
 import com.sdk.common.utils.ble.BleUtil
 
-class BleController: BleUtil.IBleStateNotify {
+class BleController : BleUtil.IBleStateNotify {
     private var bleClient: BleClient? = null
     private var bleServer: BleServer? = null
 

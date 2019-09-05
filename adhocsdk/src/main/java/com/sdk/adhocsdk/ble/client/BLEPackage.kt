@@ -7,11 +7,11 @@ class BLEPackage {
     companion object {
         private const val MAX_SIZE = 19
 
-        fun split(data: ByteArray):LinkedList<BLEPackage> {
+        fun split(data: ByteArray): LinkedList<BLEPackage> {
             val queue = LinkedList<BLEPackage>()
             var index = 0
             while (index < data.size) {
-                val to = min(index+ MAX_SIZE, data.size)
+                val to = min(index + MAX_SIZE, data.size)
                 queue.add(BLEPackage().apply {
                     init(data, index, to)
                 })
@@ -20,46 +20,48 @@ class BLEPackage {
             return queue
         }
     }
-    private lateinit var array:ByteArray
 
-    fun init(data:ByteArray, fromIndex:Int, toIndex:Int) {
+    private lateinit var array: ByteArray
+
+    fun init(data: ByteArray, fromIndex: Int, toIndex: Int) {
         if (fromIndex == 0 && data.size > toIndex) {
             array = ByteArray(MAX_SIZE + 1)
-            array[0] = PACK_TYPE.INIT.v
-            System.arraycopy(data, fromIndex, array, fromIndex+1, toIndex-fromIndex)
-        } else if(data.size > toIndex){
-            array = data.copyOfRange(fromIndex-1, toIndex)
-            array[0] = PACK_TYPE.MEDIUM.v
+            array[0] = PackType.INIT.v
+            System.arraycopy(data, fromIndex, array, fromIndex + 1, toIndex - fromIndex)
+        } else if (data.size > toIndex) {
+            array = data.copyOfRange(fromIndex - 1, toIndex)
+            array[0] = PackType.MEDIUM.v
         } else {
-            array = data.copyOfRange(fromIndex-1, toIndex)
-            array[0] = PACK_TYPE.END.v
+            array = data.copyOfRange(fromIndex - 1, toIndex)
+            array[0] = PackType.END.v
         }
     }
 
-    fun initDirect(data:ByteArray) {
+    fun initDirect(data: ByteArray) {
         array = data
     }
 
-    fun getData():ByteArray {
+    fun getData(): ByteArray {
         return array.copyOfRange(1, array.size)
     }
 
-    fun getTypedData():ByteArray {
+    fun getTypedData(): ByteArray {
         return array
     }
 
-    fun getType():PACK_TYPE {
-        return when(array[0]) {
-            PACK_TYPE.INIT.v -> {
-                PACK_TYPE.INIT
+    fun getType(): PackType {
+        return when (array[0]) {
+            PackType.INIT.v -> {
+                PackType.INIT
             }
-            PACK_TYPE.MEDIUM.v -> {
-                PACK_TYPE.MEDIUM
+            PackType.MEDIUM.v -> {
+                PackType.MEDIUM
             }
-            else -> PACK_TYPE.END
+            else -> PackType.END
         }
     }
-    enum class PACK_TYPE(val v:Byte) {
+
+    enum class PackType(val v: Byte) {
         INIT(0),
         MEDIUM(1),
         END(2)

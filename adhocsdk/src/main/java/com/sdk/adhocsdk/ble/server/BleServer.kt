@@ -129,11 +129,11 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
                 }
 
                 when {
-                    pkg.getType() == BLEPackage.PACK_TYPE.END -> {
+                    pkg.getType() == BLEPackage.PackType.END -> {
                         characteristic.value += pkg.getData()
                         listener?.onReceiveData(device, characteristic.value)
                     }
-                    pkg.getType() == BLEPackage.PACK_TYPE.INIT -> characteristic.value = pkg.getData()
+                    pkg.getType() == BLEPackage.PackType.INIT -> characteristic.value = pkg.getData()
                     else -> characteristic.value += pkg.getData()
                 }
             }
