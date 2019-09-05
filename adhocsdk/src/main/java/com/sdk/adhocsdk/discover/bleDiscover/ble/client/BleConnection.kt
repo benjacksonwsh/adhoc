@@ -1,9 +1,9 @@
-package com.sdk.adhocsdk.ble.client
+package com.sdk.adhocsdk.discover.bleDiscover.ble.client
 
 import android.bluetooth.*
 import com.sdk.common.utils.ContextHolder
 import com.sdk.common.utils.log.CLog
-import com.sdk.adhocsdk.ble.BLEConstant
+import com.sdk.adhocsdk.discover.bleDiscover.ble.BLEConstant
 import java.util.*
 
 

@@ -1,4 +1,4 @@
-package com.sdk.adhocsdk.p2pdiscover
+package com.sdk.adhocsdk.discover.p2pdiscover
 
 import android.net.wifi.p2p.WifiP2pManager
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo

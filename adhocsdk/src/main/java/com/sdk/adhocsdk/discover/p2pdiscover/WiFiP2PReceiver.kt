@@ -1,4 +1,4 @@
-package com.sdk.adhocsdk.p2pdiscover
+package com.sdk.adhocsdk.discover.p2pdiscover
 
 import android.net.wifi.p2p.WifiP2pManager
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceRequest
@@ -7,7 +7,6 @@ import com.sdk.adhocsdk.WiFiP2PActionProxy
 import com.sdk.adhocsdk.WiFiP2PHotspot
 import com.sdk.common.utils.WeakListeners
 import com.sdk.common.utils.log.CLog
-import java.net.Inet6Address
 
 class WiFiP2PReceiver (private val wifiP2PManager: WifiP2pManager,
                        private val channel: WifiP2pManager.Channel) {

@@ -1,4 +1,4 @@
-package com.sdk.adhocsdk.ble.client
+package com.sdk.adhocsdk.discover.bleDiscover.ble.client
 
 import java.util.*
 import kotlin.math.min

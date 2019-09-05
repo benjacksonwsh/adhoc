@@ -6,9 +6,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.wifi.p2p.WifiP2pManager
 import android.os.Looper
-import com.sdk.adhocsdk.ble.BleController
-import com.sdk.adhocsdk.p2pdiscover.WiFiP2PBroadcaster
-import com.sdk.adhocsdk.p2pdiscover.WiFiP2PReceiver
+import com.sdk.adhocsdk.discover.bleDiscover.BleDiscover
+import com.sdk.adhocsdk.discover.p2pdiscover.WiFiP2PBroadcaster
+import com.sdk.adhocsdk.discover.p2pdiscover.WiFiP2PReceiver
 import com.sdk.annotation.ModuleService
 import com.sdk.common.utils.ContextHolder
 import com.sdk.common.utils.Dispatcher
@@ -26,7 +26,8 @@ class AdHocSDK : WiFiP2PReceiver.IWiFiDeviceNotify {
     private lateinit var wiFiP2PHotspotManager: WiFiP2PHotspotManager
     private lateinit var wiFiP2PBroadcaster: WiFiP2PBroadcaster
     private lateinit var wiFiP2PReceiver: WiFiP2PReceiver
-    private val bleController: BleController = BleController()
+    private val bleDiscover: BleDiscover =
+        BleDiscover()
 
     private val p2pStateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -73,7 +74,7 @@ class AdHocSDK : WiFiP2PReceiver.IWiFiDeviceNotify {
             ipV6Addr(WiFiConstant.WIFI_P2P0)
         }, 6000)
 
-        bleController.setup()
+        bleDiscover.setup()
     }
 
     private fun broadcastMyAdHocState() {
