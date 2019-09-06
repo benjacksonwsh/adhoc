@@ -2,7 +2,6 @@ package com.example.bleclient
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -16,8 +15,8 @@ import androidx.core.content.PermissionChecker
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.demo.adhoc.compnent.DataSource
 import com.demo.adhoc.compnent.RecycleViewAdapter
-import com.sdk.adhocsdk.ble.client.BleClient
 import com.sdk.common.utils.ContextHolder
+import com.sdk.adhocsdk.discover.bleDiscover.ble.client.BleClient
 import com.sdk.common.utils.Dispatcher
 import com.sdk.common.utils.dp2Px
 import com.sdk.common.utils.wifi.WiFiUtil
@@ -108,7 +107,7 @@ class MainActivity:AppCompatActivity(), BleClient.IBleClientListener, RecycleVie
         }
     }
 
-    override fun onReceiveData(serverId:String, data: ByteArray) {
+    override fun onReceiveServerData(serverId:String, data: ByteArray) {
         val text = String(data)
         Dispatcher.mainThread.dispatch ({
             val ssids = text.split("\n")
@@ -126,11 +125,11 @@ class MainActivity:AppCompatActivity(), BleClient.IBleClientListener, RecycleVie
         }, 2)
     }
 
-    override fun onConnected(serverId: String) {
+    override fun onServerConnected(serverId: String) {
         bleClient.sendRequest(serverId, "${System.currentTimeMillis()} req from client".toByteArray())
     }
 
-    override fun onDisconnected(serverId: String) {
+    override fun onServerDisconnected(serverId: String) {
 
     }
 }

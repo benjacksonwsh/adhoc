@@ -1,13 +1,13 @@
-package com.sdk.adhocsdk.ble.server
+package com.sdk.adhocsdk.discover.bleDiscover.ble.server
 
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
-import com.sdk.adhocsdk.ble.BLEConstant
+import com.sdk.adhocsdk.discover.bleDiscover.ble.BLEConstant
 import java.util.*
 
-class BleCharacteristicReader(uuid: UUID) : BluetoothGattCharacteristic(
+class BleCharacteristicWriter(uuid: UUID) : BluetoothGattCharacteristic(
     uuid,
-    PROPERTY_WRITE_NO_RESPONSE, PERMISSION_WRITE
+    PROPERTY_READ, PERMISSION_READ
 ) {
     init {
         addDescriptor(BluetoothGattDescriptor(BLEConstant.ID_DESCRIPTOR, PERMISSION_WRITE.and(PERMISSION_READ)))

@@ -1,13 +1,16 @@
-package com.sdk.adhocsdk.ble
+package com.sdk.adhocsdk.discover.bleDiscover
 
 import android.bluetooth.BluetoothAdapter
-import com.sdk.adhocsdk.ble.client.BleClient
-import com.sdk.adhocsdk.ble.server.BleServer
+import android.bluetooth.BluetoothDevice
+import com.sdk.adhocsdk.WiFiP2PHotspot
+import com.sdk.adhocsdk.discover.bleDiscover.ble.client.BleClient
+import com.sdk.adhocsdk.discover.bleDiscover.ble.server.BleServer
 import com.sdk.common.utils.ble.BleUtil
 
-class BleController : BleUtil.IBleStateNotify {
+class BleDiscover : BleUtil.IBleStateNotify,BleClient.IBleClientListener, BleServer.IBleServerListener {
     private var bleClient: BleClient? = null
     private var bleServer: BleServer? = null
+    private var neighborHotspotMap = HashMap<String, WiFiP2PHotspot>()
 
     fun setup() {
         BleUtil.stateNotify.addListener(this)
@@ -50,5 +53,29 @@ class BleController : BleUtil.IBleStateNotify {
 
     override fun onBLEStateChanged() {
         updateBle()
+    }
+
+    override fun onReceiveServerData(serverId: String, data: ByteArray) {
+
+    }
+
+    override fun onServerConnected(serverId: String) {
+
+    }
+
+    override fun onServerDisconnected(serverId: String) {
+
+    }
+
+    override fun onClientConnected(device: BluetoothDevice) {
+
+    }
+
+    override fun onClientDisconnected(device: BluetoothDevice) {
+
+    }
+
+    override fun onReceiveClientData(device: BluetoothDevice, data: ByteArray) {
+
     }
 }

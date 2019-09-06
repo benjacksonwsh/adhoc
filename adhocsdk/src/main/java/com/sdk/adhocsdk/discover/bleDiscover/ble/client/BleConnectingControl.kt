@@ -1,10 +1,10 @@
-package com.sdk.adhocsdk.ble.client
+package com.sdk.adhocsdk.discover.bleDiscover.ble.client
 
 import com.sdk.common.utils.SafeWeakListeners
 import java.util.concurrent.atomic.AtomicReference
 
 class BleConnectingControl {
-    private var serverId = AtomicReference<String>("")
+    private var serverId = AtomicReference("")
     val signal = SafeWeakListeners<IConnectChangedSignal>()
 
     fun start(serverId: String) {

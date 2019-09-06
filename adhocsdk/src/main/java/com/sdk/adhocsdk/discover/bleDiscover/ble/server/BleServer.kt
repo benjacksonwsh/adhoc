@@ -1,4 +1,4 @@
-package com.sdk.adhocsdk.ble.server
+package com.sdk.adhocsdk.discover.bleDiscover.ble.server
 
 import android.bluetooth.*
 import android.bluetooth.le.AdvertiseCallback
@@ -7,8 +7,8 @@ import android.bluetooth.le.AdvertiseSettings
 import android.bluetooth.le.BluetoothLeAdvertiser
 import android.content.Context
 import android.os.ParcelUuid
-import com.sdk.adhocsdk.ble.BLEConstant
-import com.sdk.adhocsdk.ble.client.BLEPackage
+import com.sdk.adhocsdk.discover.bleDiscover.ble.BLEConstant
+import com.sdk.adhocsdk.discover.bleDiscover.ble.client.BLEPackage
 import com.sdk.common.utils.ContextHolder
 import com.sdk.common.utils.RandomUtil
 import com.sdk.common.utils.log.CLog
@@ -135,7 +135,7 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
                 gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, characteristic.value)
 
                 if (null == value) {
-                    listener?.onReceiveData(device, characteristic.value)
+                    listener?.onReceiveClientData(device, characteristic.value)
                     return
                 }
 
@@ -146,7 +146,7 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
                 when {
                     pkg.getType() == BLEPackage.PackType.END -> {
                         characteristic.value += pkg.getData()
-                        listener?.onReceiveData(device, characteristic.value)
+                        listener?.onReceiveClientData(device, characteristic.value)
                     }
                     pkg.getType() == BLEPackage.PackType.INIT -> characteristic.value = pkg.getData()
                     else -> characteristic.value += pkg.getData()
@@ -229,6 +229,6 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
     interface IBleServerListener {
         fun onClientConnected(device: BluetoothDevice)
         fun onClientDisconnected(device: BluetoothDevice)
-        fun onReceiveData(device: BluetoothDevice, data:ByteArray)
+        fun onReceiveClientData(device: BluetoothDevice, data:ByteArray)
     }
 }

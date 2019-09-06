@@ -1,11 +1,9 @@
-package com.sdk.adhocsdk.ble.client
+package com.sdk.adhocsdk.discover.bleDiscover.ble.client
 
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
-import com.sdk.adhocsdk.ble.BLEConstant
-import com.sdk.common.utils.GsonUtil
+import com.sdk.adhocsdk.discover.bleDiscover.ble.BLEConstant
 import com.sdk.common.utils.base64Encode
 import com.sdk.common.utils.format
 import com.sdk.common.utils.log.CLog
@@ -90,20 +88,20 @@ class BleClient(private val scanner: BluetoothLeScanner) : ScanCallback(),
     }
 
     override fun onReceiveData(connection: BleConnection, data: ByteArray) {
-        listener?.onReceiveData(connection.serverId, data)
+        listener?.onReceiveServerData(connection.serverId, data)
     }
 
     override fun onClosed(connection: BleConnection) {
-        listener?.onDisconnected(connection.serverId)
+        listener?.onServerDisconnected(connection.serverId)
     }
 
     override fun onConnected(connection: BleConnection) {
-        listener?.onConnected(connection.serverId)
+        listener?.onServerConnected(connection.serverId)
     }
 
     interface IBleClientListener {
-        fun onReceiveData(serverId: String, data: ByteArray)
-        fun onConnected(serverId: String)
-        fun onDisconnected(serverId: String)
+        fun onReceiveServerData(serverId: String, data: ByteArray)
+        fun onServerConnected(serverId: String)
+        fun onServerDisconnected(serverId: String)
     }
 }
