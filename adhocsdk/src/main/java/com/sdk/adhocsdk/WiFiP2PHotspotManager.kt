@@ -47,6 +47,7 @@ class WiFiP2PHotspotManager(
             CLog.i("P2PGroupHotspot", "createHotspot succeed:$succeed reason:$reason")
             if (succeed || reason == WifiP2pManager.BUSY) {
                 retryGetHotspotInfo {
+                    CLog.i("P2PGroupHotspot", "ssid:${it.ssid}")
                     result(it)
                 }
                 return@WiFiP2PActionProxy

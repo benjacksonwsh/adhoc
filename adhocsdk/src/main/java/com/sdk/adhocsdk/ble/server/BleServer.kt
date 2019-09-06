@@ -20,7 +20,7 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
         private const val TRANSPORT_UNIT_SIZE = 22
     }
 
-    val serverId = RandomUtil.getRandom(6)
+    val serverId = BleServerIdFactory().buidId()
     private var listener: IBleServerListener? = null
     private var gattServer: BluetoothGattServer? = null
     private val reader = BleCharacteristicReader(BLEConstant.ID_SERVER_READER)
@@ -66,16 +66,31 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
     }
 
     fun sendResponse(device: BluetoothDevice, data: ByteArray): Boolean {
-        writer.value = data
-        return gattServer?.notifyCharacteristicChanged(device, writer, false)?:false
+        try {
+            writer.value = data
+            return gattServer?.notifyCharacteristicChanged(device, writer, false)?:false
+        } catch (e:Throwable) {
+            CLog.i(TAG, "sendResponse failed")
+        }
+
+        return false
     }
 
     fun broadcast(data: ByteArray) {
-        writer.value = data
-        val list = gattServer?.connectedDevices?:return
-        for (d in list) {
-            gattServer?.notifyCharacteristicChanged(d, writer, false)
-        }
+//        writer.value = data
+//        try {
+//            val list = gattServer?.connectedDevices?:return
+//            for (d in list) {
+//                try {
+//                    gattServer?.notifyCharacteristicChanged(d, writer, false)
+//                } catch (e:Throwable) {
+//                    CLog.i(TAG, "broadcast ${d.address} failed")
+//                }
+//            }
+//        } catch (e:Throwable) {
+//            CLog.i(TAG, "no devices and broadcast failed")
+//        }
+
     }
 
     override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {

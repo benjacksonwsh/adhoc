@@ -13,10 +13,15 @@
                 android:layout_height="0dp"
                 android:layout_weight="1"/>
         <Button
-                android:id="@+id/item_connect"
+                android:id="@+id/item_ble_connect"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="连接"/>
+                android:text="BLE连接"/>
+        <Button
+                android:id="@+id/item_wifi_connect"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Wi-Fi连接"/>
     </LinearLayout>
     <TextView android:id="@+id/item_message"
               android:layout_width="match_parent"

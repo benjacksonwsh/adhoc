@@ -1,24 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:orientation="vertical" android:layout_width="match_parent"
-        android:layout_height="match_parent">
-        <TextView
-                android:id="@+id/main_title"
-                android:paddingTop="50dp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:text="BLE Server"/>
+              android:layout_width="match_parent" android:layout_height="match_parent"
+              android:orientation="vertical">
+    <TextView
+            android:id="@+id/main_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:paddingTop="50dp"
+            android:text="BLE Server"/>
 
+    <LinearLayout android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal">
         <Button
                 android:id="@+id/button_refresh"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="refresh"/>
+        <Button
+                android:id="@+id/button_shutdown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingLeft="20dp"
+                android:text="shutdown"/>
+    </LinearLayout>
 
-        <TextView
-                android:id="@+id/main_read_text"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:textColor="#000000"/>
+    <TextView
+            android:id="@+id/main_read_text"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:textColor="#000000"/>
 </LinearLayout>

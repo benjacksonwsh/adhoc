@@ -24,18 +24,23 @@ class BleController : BleUtil.IBleStateNotify {
 
     private fun updateBle() {
         if (BleUtil.isSupport()) {
-            if (BleUtil.isEnable() && BleUtil.isSupportAdvertiser()) {
-                this.bleServer?.tearDown()
-                val bleServer =
-                    BleServer(BluetoothAdapter.getDefaultAdapter().bluetoothLeAdvertiser)
-                bleServer.setup()
-                this.bleServer = bleServer
+            if (BleUtil.isEnable()) {
+                val advertiser = BluetoothAdapter.getDefaultAdapter().bluetoothLeAdvertiser
+                if (null != advertiser) {
+                    this.bleServer?.tearDown()
+                    val bleServer = BleServer(advertiser)
+                    bleServer.setup()
+                    this.bleServer = bleServer
+                }
 
-                this.bleClient?.tearDown()
-                val bleClient =
-                    BleClient(BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner)
-                bleClient.setup()
-                this.bleClient = bleClient
+                val scanner = BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner
+                if (null != scanner) {
+                    this.bleClient?.tearDown()
+                    val bleClient = BleClient(scanner)
+                    bleClient.setup()
+                    this.bleClient = bleClient
+                }
+
                 return
             }
         }

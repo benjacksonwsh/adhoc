@@ -17,14 +17,19 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.demo.adhoc.compnent.DataSource
 import com.demo.adhoc.compnent.RecycleViewAdapter
 import com.sdk.adhocsdk.ble.client.BleClient
+import com.sdk.common.utils.ContextHolder
 import com.sdk.common.utils.Dispatcher
 import com.sdk.common.utils.dp2Px
+import com.sdk.common.utils.wifi.WiFiUtil
 import kotlinx.android.synthetic.main.main_activity.*
+import java.util.concurrent.ConcurrentHashMap
 
 class MainActivity:AppCompatActivity(), BleClient.IBleClientListener, RecycleViewAdapter.IViewHolderDelegate<String> {
 
     private val bleClient =
         BleClient(BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner)
+    private val wifiMap = ConcurrentHashMap<String, Pair<String, String>>()
+
     private val dataSource = object :DataSource<String>() {
         fun updateList(list:List<String>) {
             this.list.clear()
@@ -82,24 +87,43 @@ class MainActivity:AppCompatActivity(), BleClient.IBleClientListener, RecycleVie
         val serverId = viewHolder.getData()?:return
         val idView = viewHolder.itemView.findViewById<TextView>(R.id.item_server_id)
         val lastMessage = viewHolder.itemView.findViewById<TextView>(R.id.item_message)
-        val connect = viewHolder.itemView.findViewById<View>(R.id.item_connect)
+        val connect = viewHolder.itemView.findViewById<View>(R.id.item_ble_connect)
+        val wiFiConnect = viewHolder.itemView.findViewById<View>(R.id.item_wifi_connect)
         val title = "$serverId ${bleClient.getConnectionState(serverId)}"
 
         idView.text = title
         lastMessage.text = messageMap[serverId]
         connect.setOnClickListener {
+            WiFiUtil.startScan()
             bleClient.connectDevice(serverId)
+        }
+
+        wiFiConnect.setOnClickListener {
+            val wifi = wifiMap[serverId]
+            if (wifi != null) {
+                WiFiUtil.connectWiFi(wifi.first, wifi.second) {
+                    Toast.makeText(ContextHolder.CONTEXT, "Wi-Fi 连接成功？$it", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
     override fun onReceiveData(serverId:String, data: ByteArray) {
         val text = String(data)
-        Dispatcher.mainThread.dispatch {
-            val tmp = "${System.currentTimeMillis()} $serverId  $text"
+        Dispatcher.mainThread.dispatch ({
+            val ssids = text.split("\n")
+            val ssid = if (ssids.size == 3) {
+                wifiMap[serverId] = Pair(ssids[1], ssids[2])
+                ssids[1]
+            } else {
+                ""
+            }
+            val tmp = "${System.currentTimeMillis()} $serverId  $text Wi-Fi match:${WiFiUtil.getScanList().contains(ssid)}"
+
             messageMap[serverId] = tmp
             dataSource.refresh()
             bleClient.sendRequest(serverId, "${System.currentTimeMillis()} req from client".toByteArray())
-        }
+        }, 2)
     }
 
     override fun onConnected(serverId: String) {

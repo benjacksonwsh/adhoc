@@ -23,6 +23,7 @@ object WiFiUtil {
 
     fun init(context: Context) {
         enable = isEnable()
+        wiFiManager.startScan()
         receiver = object :BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 val b = isEnable()
@@ -172,10 +173,16 @@ object WiFiUtil {
     }
 
     fun disconnectWiFi() {
-        if (netId != 0) {
-            wiFiManager.disableNetwork(netId)
-            wiFiManager.removeNetwork(netId)
+        val currentNetId = currentNetId()
+        if (currentNetId != 0) {
+            wiFiManager.disableNetwork(currentNetId)
+            wiFiManager.reconnect()
+            //wiFiManager.removeNetwork(netId)
         }
+    }
+
+    fun startScan() {
+        wiFiManager.startScan()
     }
 
 
@@ -201,6 +208,16 @@ object WiFiUtil {
         config.status = WifiConfiguration.Status.ENABLED
 
         return config
+    }
+
+    fun getScanList(): List<String> {
+        return wiFiManager.scanResults.mapNotNull {
+            if(it.SSID?.startsWith("DIRECT-", true) == true) {
+                it.SSID
+            } else {
+                null
+            }
+        }
     }
 
     private fun isExist(ssid: String): WifiConfiguration? {

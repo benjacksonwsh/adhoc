@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
+import com.sdk.adhocsdk.AdHocSDK
 import com.sdk.adhocsdk.ble.server.BleServer
 import com.sdk.common.utils.Dispatcher
 import com.sdk.common.utils.base64Encode
@@ -19,7 +20,10 @@ import kotlinx.android.synthetic.main.main_activity.*
 class MainActivity: AppCompatActivity(), BleServer.IBleServerListener {
     private val bleServer =
         BleServer(BluetoothAdapter.getDefaultAdapter().bluetoothLeAdvertiser)
+
     private var dispose:Disposable? = null
+
+    private val adHocSdk = AdHocSDK()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,9 +44,22 @@ class MainActivity: AppCompatActivity(), BleServer.IBleServerListener {
 
         button_refresh.setOnClickListener {
             dispose?.dispose()
+            adHocSdk.enableHotspot()
+
             bleServer.tearDown()
             bleServer.setup()
         }
+
+        button_shutdown.setOnClickListener {
+            dispose?.dispose()
+            bleServer.tearDown()
+            adHocSdk.disableHotspot()
+        }
+
+//        Dispatcher.mainThread.dispatch({
+//            val ssid = adHocSdk.getHotspot()?.ssid?:return@dispatch
+//            bleServer.broadcast("ssid:$ssid".toByteArray())
+//        }, 3000)
 
         val title = "BLE Server:${bleServer.serverId.base64Encode().format()}"
         main_title.text = title
@@ -75,8 +92,13 @@ class MainActivity: AppCompatActivity(), BleServer.IBleServerListener {
 
             this.dispose = Dispatcher.mainThread.dispatch({
                 this.dispose = null
-                bleServer.sendResponse(device, "${System.currentTimeMillis()} response from server".toByteArray())
-            },3000)
+                adHocSdk.getHotspot {
+                    val broadcastData = "ssid\n${it.ssid}\n${it.passwd}"
+                    CLog.i("BleServer", "broadcasting $broadcastData")
+                    bleServer.sendResponse(device, broadcastData.toByteArray())
+                }
+
+            },2000)
         }
     }
 }

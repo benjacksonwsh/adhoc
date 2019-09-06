@@ -23,6 +23,7 @@ class BleConnection(var device: BluetoothDevice, val serverId: String, private v
     fun connect() {
         if (connectState != ConnectState.DISCONNECTED
             && connectState != ConnectState.INIT
+            && connectState != ConnectState.QUEUED
         ) {
             return
         }
@@ -80,7 +81,7 @@ class BleConnection(var device: BluetoothDevice, val serverId: String, private v
         gatt = null
         writer = null
         reader = null
-        connectState = ConnectState.DISCONNECTED
+        setState(ConnectState.DISCONNECTED)
 
         connectSignal.signal.removeListener(this)
     }
@@ -146,8 +147,10 @@ class BleConnection(var device: BluetoothDevice, val serverId: String, private v
         if (this.connectState != connectState) {
             this.connectState = connectState
             if (connectState == ConnectState.CONNECTED) {
+                connectSignal.finished(serverId)
                 listener.onConnected(this)
             } else if (connectState == ConnectState.DISCONNECTED) {
+                connectSignal.finished(serverId)
                 listener.onClosed(this)
             }
         }
@@ -157,8 +160,8 @@ class BleConnection(var device: BluetoothDevice, val serverId: String, private v
         if (this.device == device) {
             return
         }
-        this.device = device
 
+        this.device = device
         if (connectState != ConnectState.CONNECTED && gatt != null) {
             close()
         }

@@ -50,6 +50,7 @@ class MainActivity : AppCompatActivity(), WiFiUtil.IWiFiStateNotify {
         if (!WiFiUtil.isEnable()) {
             onCheck()
         }
+        
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

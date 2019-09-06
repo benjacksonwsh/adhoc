@@ -35,7 +35,7 @@ class AdHocSDK : WiFiP2PReceiver.IWiFiDeviceNotify {
                     val state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1)
                     if (state == WifiP2pManager.WIFI_P2P_STATE_ENABLED) {
                         CLog.i("AdHocSDK", "event:p2p enable")
-                        broadcastMyAdHocState()
+                        //broadcastMyAdHocState()
                     } else {
                         CLog.i("AdHocSDK", "event:p2p disable")
                     }
@@ -65,37 +65,53 @@ class AdHocSDK : WiFiP2PReceiver.IWiFiDeviceNotify {
         //broadcastMyAdHocState()
         //wiFiP2PHotspotManager.disableHotspot {  }
 
-        wiFiP2PReceiver.setup()
+//        wiFiP2PReceiver.setup()
+//
+//        wiFiP2PReceiver.search()
+//        Dispatcher.mainThread.repeat({
+//            wiFiP2PReceiver.search()
+//            ipV6Addr(WiFiConstant.WIFI_P2P0)
+//        }, 6000)
 
-        wiFiP2PReceiver.search()
-        Dispatcher.mainThread.repeat({
-            wiFiP2PReceiver.search()
-            ipV6Addr(WiFiConstant.WIFI_P2P0)
-        }, 6000)
-
-        bleController.setup()
+        //bleController.setup()
     }
 
-    private fun broadcastMyAdHocState() {
-        wiFiP2PHotspotManager.getHotspotInfo { hotspot ->
-            if (null == hotspot) {
-                Dispatcher.mainThread.dispatch({
-                    wiFiP2PHotspotManager.enableHotspot {
-                        broadcastMyAdHocState()
-                    }
-                }, 1000)
-                return@getHotspotInfo
-            }
-
-            wiFiP2PBroadcaster.broadcast(
-                hotspot.ssid,
-                hotspot.passwd, hotspot.ipV6Addr
-            ) {
-                CLog.i(TAG, "broadcast result:$it")
-            }
+    fun getHotspot(result:(hotspot:WiFiP2PHotspot)->Unit) {
+        wiFiP2PHotspotManager.getHotspotInfo {
+            result(it?:return@getHotspotInfo)
         }
-
     }
+
+    fun enableHotspot() {
+        wiFiP2PHotspotManager.enableHotspot {
+        }
+    }
+
+    fun disableHotspot() {
+        wiFiP2PHotspotManager.disableHotspot {
+        }
+    }
+
+//    private fun broadcastMyAdHocState() {
+//        wiFiP2PHotspotManager.getHotspotInfo { hotspot ->
+//            if (null == hotspot) {
+//                Dispatcher.mainThread.dispatch({
+//                    wiFiP2PHotspotManager.enableHotspot {
+//                        broadcastMyAdHocState()
+//                    }
+//                }, 1000)
+//                return@getHotspotInfo
+//            }
+//
+//            wiFiP2PBroadcaster.broadcast(
+//                hotspot.ssid,
+//                hotspot.passwd, hotspot.ipV6Addr
+//            ) {
+//                CLog.i(TAG, "broadcast result:$it")
+//            }
+//        }
+//
+//    }
 
     override fun onWiFiDeviceChanged() {
         val devices = wiFiP2PReceiver.getHotspotDevices()
