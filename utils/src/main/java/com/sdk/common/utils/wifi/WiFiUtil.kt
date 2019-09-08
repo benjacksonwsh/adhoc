@@ -8,6 +8,7 @@ import android.net.NetworkInfo
 import android.net.wifi.WifiConfiguration
 import android.net.wifi.WifiManager
 import com.sdk.common.utils.ContextHolder
+import com.sdk.common.utils.Dispatcher
 import com.sdk.common.utils.WeakListeners
 import com.sdk.common.utils.log.CLog
 import com.sdk.common.utils.network.NetworkUtil
@@ -133,6 +134,14 @@ object WiFiUtil {
 
     private fun connectWiFi(netId:Int, result: (succeed: Boolean) -> Unit): Boolean {
         CLog.i(TAG, "connectWiFi $netId")
+
+        val currentNetId = currentNetId()
+        if (currentNetId == netId) {
+            result(true)
+        } else if(currentNetId >= 0) {
+            wiFiManager.disconnect()
+        }
+
         val intentFilter = IntentFilter()
         intentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION)
         intentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION)
@@ -152,13 +161,20 @@ object WiFiUtil {
                             CLog.i(TAG, "wifi 已禁用")
                         }
                     }
-
                     WifiManager.NETWORK_STATE_CHANGED_ACTION -> {
                         val netInfo = intent.getParcelableExtra<NetworkInfo>(WifiManager.EXTRA_NETWORK_INFO)
                         CLog.i(TAG, "wifi connected: ${netInfo.isConnected}")
                         if (netInfo.isConnected) {
-                            result(true)
-                            ContextHolder.CONTEXT.unregisterReceiver(wifiStateReceiver ?: return)
+                            Dispatcher.mainThread.dispatch({
+                                if (currentNetId() != netId) {
+                                    CLog.i(TAG, "wifi connected reconnecting")
+                                    connectWiFi(netId, result)
+                                    return@dispatch
+                                }
+                                result(true)
+                            },5000)
+
+                            ContextHolder.CONTEXT.unregisterReceiver(wifiStateReceiver?:return)
                         }
                     }
                 }
@@ -224,7 +240,7 @@ object WiFiUtil {
         val configs = wiFiManager.configuredNetworks
 
         for (config in configs) {
-            if (config.SSID == ssid) {
+            if (config.SSID == "\"$ssid\"") {
                 return config
             }
         }

@@ -7,6 +7,7 @@ import android.bluetooth.le.AdvertiseSettings
 import android.bluetooth.le.BluetoothLeAdvertiser
 import android.content.Context
 import android.os.ParcelUuid
+import com.sdk.adhocsdk.ble.server.BleServerIdFactory
 import com.sdk.adhocsdk.discover.bleDiscover.ble.BLEConstant
 import com.sdk.adhocsdk.discover.bleDiscover.ble.client.BLEPackage
 import com.sdk.common.utils.ContextHolder
