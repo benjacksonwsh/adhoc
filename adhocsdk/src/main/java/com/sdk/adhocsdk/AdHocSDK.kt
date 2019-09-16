@@ -11,10 +11,12 @@ import com.sdk.adhocsdk.discover.p2pdiscover.WiFiP2PBroadcaster
 import com.sdk.adhocsdk.discover.p2pdiscover.WiFiP2PReceiver
 import com.sdk.annotation.ModuleService
 import com.sdk.common.utils.ContextHolder
-import com.sdk.common.utils.Dispatcher
 import com.sdk.common.utils.ipV6Addr
 import com.sdk.common.utils.log.CLog
 import com.sdk.common.utils.wifi.WiFiUtil
+import java.io.*
+import java.net.ServerSocket
+
 
 @ModuleService
 class AdHocSDK : WiFiP2PReceiver.IWiFiDeviceNotify {
@@ -85,6 +87,26 @@ class AdHocSDK : WiFiP2PReceiver.IWiFiDeviceNotify {
 
     fun enableHotspot() {
         wiFiP2PHotspotManager.enableHotspot {
+            if (null != it) {
+                Thread{
+                    try {
+                        val serverSocket = ServerSocket( 27623,50,ipV6Addr(WiFiConstant.WIFI_P2P0)?:return@Thread)
+                        while (true) {
+                            val socket = serverSocket.accept()
+                            val reader = BufferedReader(
+                                InputStreamReader(socket.getInputStream())
+                            )
+                            val writer = BufferedWriter(
+                                OutputStreamWriter(socket.getOutputStream())
+                            )
+                            writer.write("Test Socket\r\n")
+                            writer.flush()
+                        }
+                    } catch (e: IOException) {
+                        e.printStackTrace()
+                    }
+                }.start()
+            }
         }
     }
 

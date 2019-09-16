@@ -1,6 +1,10 @@
 package com.sdk.common.utils
 
 import com.sdk.common.utils.log.CLog
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.DataInputStream
+import java.io.DataOutputStream
 import java.net.*
 
 
@@ -47,4 +51,22 @@ fun getNetInterface(name:String):NetworkInterface? {
         CLog.e("IPAddress", "getNetInterface failed", ex)
     }
     return null
+}
+
+fun ipV6Encode(addr:Inet6Address): String {
+    val out = ByteArrayOutputStream()
+    val stream = DataOutputStream(out)
+    stream.writeInt(addr.scopeId)
+    stream.write(addr.address)
+    stream.close()
+    return String(out.toByteArray().base64Encode())
+}
+
+fun ipV6Decode(codedV6Address:String): Inet6Address {
+    val input = ByteArrayInputStream(codedV6Address.toByteArray().base64Decode())
+    val stream = DataInputStream(input)
+    val scopeId = stream.readInt()
+    val address = stream.readBytes()
+    stream.close()
+    return Inet6Address.getByAddress(null, address, scopeId )
 }

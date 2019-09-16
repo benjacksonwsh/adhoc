@@ -3,6 +3,7 @@ package com.example.bleclient
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,15 +20,21 @@ import com.sdk.common.utils.ContextHolder
 import com.sdk.adhocsdk.discover.bleDiscover.ble.client.BleClient
 import com.sdk.common.utils.Dispatcher
 import com.sdk.common.utils.dp2Px
+import com.sdk.common.utils.ipV6Decode
 import com.sdk.common.utils.wifi.WiFiUtil
 import kotlinx.android.synthetic.main.main_activity.*
+import java.io.*
+import java.net.Inet6Address
+import java.net.InetSocketAddress
+import java.net.Socket
+import java.net.UnknownHostException
 import java.util.concurrent.ConcurrentHashMap
 
 class MainActivity:AppCompatActivity(), BleClient.IBleClientListener, RecycleViewAdapter.IViewHolderDelegate<String> {
 
     private val bleClient =
         BleClient(BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner)
-    private val wifiMap = ConcurrentHashMap<String, Pair<String, String>>()
+    private val wifiMap = ConcurrentHashMap<String, Triple<String, String, Inet6Address>>()
 
     private val dataSource = object :DataSource<String>() {
         fun updateList(list:List<String>) {
@@ -67,6 +74,7 @@ class MainActivity:AppCompatActivity(), BleClient.IBleClientListener, RecycleVie
         val adapter = RecycleViewAdapter(this,dataSource)
         adapter.setViewHolderDelegate(this)
         main_list.adapter = adapter
+
     }
 
     override fun createViewHolder(
@@ -102,6 +110,29 @@ class MainActivity:AppCompatActivity(), BleClient.IBleClientListener, RecycleVie
             if (wifi != null) {
                 WiFiUtil.connectWiFi(wifi.first, wifi.second) {
                     Toast.makeText(ContextHolder.CONTEXT, "Wi-Fi 连接成功？$it", Toast.LENGTH_SHORT).show()
+                    Thread(Runnable {
+
+                        try {
+                            val socket = Socket(wifi.third, 27623)
+                            val reader = BufferedReader(
+                                InputStreamReader(socket.getInputStream())
+                            );
+                            val writer = BufferedWriter(
+                                OutputStreamWriter(socket.getOutputStream())
+                            );
+
+                            var line: String?
+                            do  {
+                                line = reader.readLine()
+                                Log.i("socket client", line);
+                            } while (line != null)
+
+                        } catch (e: UnknownHostException) {
+                            e.printStackTrace();
+                        } catch (e: IOException) {
+                            e.printStackTrace();
+                        }
+                    }).start()
                 }
             }
         }
@@ -111,8 +142,8 @@ class MainActivity:AppCompatActivity(), BleClient.IBleClientListener, RecycleVie
         val text = String(data)
         Dispatcher.mainThread.dispatch ({
             val ssids = text.split("\n")
-            val ssid = if (ssids.size == 3) {
-                wifiMap[serverId] = Pair(ssids[1], ssids[2])
+            val ssid = if (ssids.size >= 4) {
+                wifiMap[serverId] = Triple(ssids[1], ssids[2], ipV6Decode(ssids[3]))
                 ssids[1]
             } else {
                 ""
@@ -124,6 +155,25 @@ class MainActivity:AppCompatActivity(), BleClient.IBleClientListener, RecycleVie
             bleClient.sendRequest(serverId, "${System.currentTimeMillis()} req from client".toByteArray())
         }, 2)
     }
+
+    override fun onServerBroadcastData(serverId: String, data: ByteArray) {
+        val text = String(data)
+        Dispatcher.mainThread.dispatch ({
+            val ssids = text.split("\n")
+            val ssid = if (ssids.size >= 4) {
+                wifiMap[serverId] = Triple(ssids[1], ssids[2], ipV6Decode(ssids[3]))
+                ssids[1]
+            } else {
+                ""
+            }
+            val tmp = "${System.currentTimeMillis()} $serverId  $text Wi-Fi match:${WiFiUtil.getScanList().contains(ssid)}"
+
+            messageMap[serverId] = tmp
+            dataSource.refresh()
+            bleClient.sendRequest(serverId, "${System.currentTimeMillis()} req from client with broadcast".toByteArray())
+        }, 2)
+    }
+
 
     override fun onServerConnected(serverId: String) {
         bleClient.sendRequest(serverId, "${System.currentTimeMillis()} req from client".toByteArray())

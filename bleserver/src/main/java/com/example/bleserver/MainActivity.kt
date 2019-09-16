@@ -9,6 +9,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import com.sdk.adhocsdk.AdHocSDK
+import com.sdk.adhocsdk.Http.HttpServer
 import com.sdk.adhocsdk.discover.bleDiscover.ble.server.BleServer
 import com.sdk.common.utils.Dispatcher
 import com.sdk.common.utils.base64Encode
@@ -24,6 +25,7 @@ class MainActivity: AppCompatActivity(), BleServer.IBleServerListener {
     private var dispose:Disposable? = null
 
     private val adHocSdk = AdHocSDK()
+    private val server = HttpServer()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,6 +57,9 @@ class MainActivity: AppCompatActivity(), BleServer.IBleServerListener {
             bleServer.tearDown()
             adHocSdk.disableHotspot()
         }
+
+        server.start()
+
 
 //        Dispatcher.mainThread.dispatch({
 //            val ssid = adHocSdk.getHotspot()?.ssid?:return@dispatch
@@ -93,11 +98,10 @@ class MainActivity: AppCompatActivity(), BleServer.IBleServerListener {
             this.dispose = Dispatcher.mainThread.dispatch({
                 this.dispose = null
                 adHocSdk.getHotspot {
-                    val broadcastData = "ssid\n${it.ssid}\n${it.passwd}"
+                    val broadcastData = "ssid\n${it.ssid}\n${it.passwd}\n${it.ipV6Addr}\n"
                     CLog.i("BleServer", "broadcasting $broadcastData")
                     bleServer.sendResponse(device, broadcastData.toByteArray())
                 }
-
             },2000)
         }
     }

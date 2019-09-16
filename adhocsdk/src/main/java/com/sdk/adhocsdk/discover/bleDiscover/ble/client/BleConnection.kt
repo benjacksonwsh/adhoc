@@ -18,6 +18,7 @@ class BleConnection(var device: BluetoothDevice, val serverId: String, private v
     private var gatt: BluetoothGatt? = null
     private var reader: BluetoothGattCharacteristic? = null
     private var writer: BluetoothGattCharacteristic? = null
+    private var broadcast: BluetoothGattCharacteristic? = null
     private var sendingQueue: LinkedList<BLEPackage>? = null
 
     fun connect() {
@@ -97,7 +98,9 @@ class BleConnection(var device: BluetoothDevice, val serverId: String, private v
                     } else if (characteristic.uuid == BLEConstant.ID_CLIENT_READER) {
                         this.reader = characteristic
                         gatt.setCharacteristicNotification(characteristic, true)
-                        //gatt.readCharacteristic(reader)
+                    } else if(characteristic.uuid == BLEConstant.ID_SERVER_BROADCAST) {
+                        this.broadcast = characteristic
+                        gatt.setCharacteristicNotification(characteristic, true)
                     }
                 }
             }
@@ -117,7 +120,12 @@ class BleConnection(var device: BluetoothDevice, val serverId: String, private v
     ) {
         val value = characteristic.value
         CLog.i(TAG, "onCharacteristicRead ${device.address} recieved  ${value.size} bytes")
-        listener.onReceiveData(this, characteristic.value ?: "".toByteArray())
+
+        if (characteristic == reader) {
+            listener.onReceiveData(this, characteristic.value ?: "".toByteArray())
+        } else if(characteristic == broadcast) {
+            listener.onBroadcastData(this, characteristic.value?:"".toByteArray())
+        }
     }
 
     override fun onCharacteristicWrite(
@@ -139,6 +147,9 @@ class BleConnection(var device: BluetoothDevice, val serverId: String, private v
     ) {
         if (characteristic == reader) {
             CLog.i(TAG, "read data ${device.address}")
+            gatt.readCharacteristic(characteristic)
+        } else if (characteristic == broadcast) {
+            CLog.i(TAG, "read broadcast ${device.address}")
             gatt.readCharacteristic(characteristic)
         }
     }
@@ -176,6 +187,7 @@ class BleConnection(var device: BluetoothDevice, val serverId: String, private v
     }
 
     interface IConnectionListener {
+        fun onBroadcastData(connection: BleConnection, data: ByteArray)
         fun onReceiveData(connection: BleConnection, data: ByteArray)
         fun onClosed(connection: BleConnection)
         fun onConnected(connection: BleConnection)

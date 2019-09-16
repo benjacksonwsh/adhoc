@@ -24,8 +24,12 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
     val serverId = BleServerIdFactory().buidId()
     private var listener: IBleServerListener? = null
     private var gattServer: BluetoothGattServer? = null
+
+    private val clientList = ArrayList<BluetoothDevice>()
+
     private val reader = BleCharacteristicReader(BLEConstant.ID_SERVER_READER)
     private val writer = BleCharacteristicWriter(BLEConstant.ID_SERVER_WRITER)
+    private val broadcast = BleCharacteristicWriter(BLEConstant.ID_SERVER_BROADCAST)
 
 
     fun setup() {
@@ -78,19 +82,19 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
     }
 
     fun broadcast(data: ByteArray) {
-//        writer.value = data
-//        try {
-//            val list = gattServer?.connectedDevices?:return
-//            for (d in list) {
-//                try {
-//                    gattServer?.notifyCharacteristicChanged(d, writer, false)
-//                } catch (e:Throwable) {
-//                    CLog.i(TAG, "broadcast ${d.address} failed")
-//                }
-//            }
-//        } catch (e:Throwable) {
-//            CLog.i(TAG, "no devices and broadcast failed")
-//        }
+        broadcast.value = data
+        try {
+            val list = clientList.toList()
+            for (d in list) {
+                try {
+                    gattServer?.notifyCharacteristicChanged(d, broadcast, false)
+                } catch (e:Throwable) {
+                    CLog.i(TAG, "broadcast ${d.address} failed")
+                }
+            }
+        } catch (e:Throwable) {
+            CLog.i(TAG, "no devices and broadcast failed")
+        }
 
     }
 
@@ -115,10 +119,12 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
                     BluetoothGatt.STATE_CONNECTED -> {
                         CLog.i(TAG,"client connected, device: $device")
                         listener?.onClientConnected(device)
+                        clientList.add(device)
                     }
                     BluetoothGatt.STATE_DISCONNECTED -> {
                         CLog.i(TAG,"client disconnected, device: $device")
                         listener?.onClientDisconnected(device)
+                        clientList.remove(device)
                     }
                 }
             }
@@ -217,6 +223,7 @@ class BleServer(private val advertiser:BluetoothLeAdvertiser): AdvertiseCallback
             BluetoothGattService.SERVICE_TYPE_PRIMARY).apply {
             addCharacteristic(writer)
             addCharacteristic(reader)
+            addCharacteristic(broadcast)
         }
 
         gattServer.addService(gattService)

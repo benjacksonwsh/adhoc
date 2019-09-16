@@ -59,6 +59,10 @@ class BleDiscover : BleUtil.IBleStateNotify,BleClient.IBleClientListener, BleSer
 
     }
 
+    override fun onServerBroadcastData(serverId: String, data: ByteArray) {
+
+    }
+
     override fun onServerConnected(serverId: String) {
 
     }

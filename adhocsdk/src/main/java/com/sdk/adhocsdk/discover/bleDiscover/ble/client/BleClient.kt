@@ -10,6 +10,7 @@ import com.sdk.common.utils.log.CLog
 
 class BleClient(private val scanner: BluetoothLeScanner) : ScanCallback(),
     BleConnection.IConnectionListener {
+
     private val TAG = "BleClient"
     private val connections = HashMap<String, BleConnection>()
     private var listener: IBleClientListener? = null
@@ -99,8 +100,13 @@ class BleClient(private val scanner: BluetoothLeScanner) : ScanCallback(),
         listener?.onServerConnected(connection.serverId)
     }
 
+    override fun onBroadcastData(connection: BleConnection, data: ByteArray) {
+        listener?.onServerBroadcastData(connection.serverId, data)
+    }
+
     interface IBleClientListener {
         fun onReceiveServerData(serverId: String, data: ByteArray)
+        fun onServerBroadcastData(serverId: String, data: ByteArray)
         fun onServerConnected(serverId: String)
         fun onServerDisconnected(serverId: String)
     }
