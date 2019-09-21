@@ -16,16 +16,12 @@ import androidx.core.content.PermissionChecker
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.demo.adhoc.compnent.DataSource
 import com.demo.adhoc.compnent.RecycleViewAdapter
-import com.sdk.common.utils.ContextHolder
 import com.sdk.adhocsdk.discover.bleDiscover.ble.client.BleClient
-import com.sdk.common.utils.Dispatcher
-import com.sdk.common.utils.dp2Px
-import com.sdk.common.utils.ipV6Decode
+import com.sdk.common.utils.*
+import com.sdk.common.utils.log.CLog
 import com.sdk.common.utils.wifi.WiFiUtil
 import kotlinx.android.synthetic.main.main_activity.*
 import java.io.*
-import java.net.Inet6Address
-import java.net.InetSocketAddress
 import java.net.Socket
 import java.net.UnknownHostException
 import java.util.concurrent.ConcurrentHashMap
@@ -34,7 +30,7 @@ class MainActivity:AppCompatActivity(), BleClient.IBleClientListener, RecycleVie
 
     private val bleClient =
         BleClient(BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner)
-    private val wifiMap = ConcurrentHashMap<String, Triple<String, String, Inet6Address>>()
+    private val wifiMap = ConcurrentHashMap<String, Triple<String, String, String>>()
 
     private val dataSource = object :DataSource<String>() {
         fun updateList(list:List<String>) {
@@ -58,6 +54,11 @@ class MainActivity:AppCompatActivity(), BleClient.IBleClientListener, RecycleVie
             ActivityCompat.requestPermissions(this, arrayOf(
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_FINE_LOCATION), 1000)
+        }
+
+        fab.setOnClickListener {
+            Fuck().invoke()
+
         }
 
         bleClient.setListener(this)
@@ -128,9 +129,9 @@ class MainActivity:AppCompatActivity(), BleClient.IBleClientListener, RecycleVie
                             } while (line != null)
 
                         } catch (e: UnknownHostException) {
-                            e.printStackTrace();
+                            CLog.e("BleClient", "", e)
                         } catch (e: IOException) {
-                            e.printStackTrace();
+                            CLog.e("BleClient", "", e)
                         }
                     }).start()
                 }
@@ -143,7 +144,7 @@ class MainActivity:AppCompatActivity(), BleClient.IBleClientListener, RecycleVie
         Dispatcher.mainThread.dispatch ({
             val ssids = text.split("\n")
             val ssid = if (ssids.size >= 4) {
-                wifiMap[serverId] = Triple(ssids[1], ssids[2], ipV6Decode(ssids[3]))
+                wifiMap[serverId] = Triple(ssids[1], ssids[2], ssids[3])
                 ssids[1]
             } else {
                 ""
@@ -161,7 +162,7 @@ class MainActivity:AppCompatActivity(), BleClient.IBleClientListener, RecycleVie
         Dispatcher.mainThread.dispatch ({
             val ssids = text.split("\n")
             val ssid = if (ssids.size >= 4) {
-                wifiMap[serverId] = Triple(ssids[1], ssids[2], ipV6Decode(ssids[3]))
+                wifiMap[serverId] = Triple(ssids[1], ssids[2], ssids[3])
                 ssids[1]
             } else {
                 ""

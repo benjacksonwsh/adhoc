@@ -11,6 +11,7 @@ import com.sdk.adhocsdk.discover.p2pdiscover.WiFiP2PBroadcaster
 import com.sdk.adhocsdk.discover.p2pdiscover.WiFiP2PReceiver
 import com.sdk.annotation.ModuleService
 import com.sdk.common.utils.ContextHolder
+import com.sdk.common.utils.buildIpV6Addr
 import com.sdk.common.utils.ipV6Addr
 import com.sdk.common.utils.log.CLog
 import com.sdk.common.utils.wifi.WiFiUtil

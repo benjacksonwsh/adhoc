@@ -6,6 +6,7 @@ import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.net.*
+import kotlin.experimental.xor
 
 
 fun ipV6Addr(netInterface:String):Inet6Address? {
@@ -36,6 +37,17 @@ fun ipV4Addr(netInterface:String):Inet4Address? {
     }
 
     return null
+}
+
+fun interfaceHardAddress(netInterface:String): ByteArray? {
+   return getNetInterface(netInterface)?.hardwareAddress
+}
+
+fun buildIpV6Addr(netInterface:String):String {
+    val hd = interfaceHardAddress(netInterface)?:return ""
+    return String.format("fe80::%02x%02x:%02xff:fe%02x:%02x%02x",
+        hd[0].xor(0x02), hd[1], hd[2],
+        hd[3], hd[4], hd[5])
 }
 
 fun getNetInterface(name:String):NetworkInterface? {

@@ -80,7 +80,7 @@ class WiFiP2PHotspotManager(
                 val ipv6 = ipV6Addr(WiFiConstant.WIFI_P2P0) ?: return@requestGroupInfo
                 result(
                     WiFiP2PHotspot(
-                        it.owner.deviceAddress, it.networkName, ipV6Encode(ipv6),
+                        it.owner.deviceAddress, it.networkName, ipv6.hostAddress,
                         it.passphrase
                     )
                 )

@@ -60,6 +60,11 @@ class MainActivity: AppCompatActivity(), BleServer.IBleServerListener {
 
         server.start()
 
+        val num = 1234567890L
+
+        val result = Base62().encode(num, 62)
+        val n = Base62().decode(result, 62)
+
 
 //        Dispatcher.mainThread.dispatch({
 //            val ssid = adHocSdk.getHotspot()?.ssid?:return@dispatch
@@ -100,7 +105,7 @@ class MainActivity: AppCompatActivity(), BleServer.IBleServerListener {
                 adHocSdk.getHotspot {
                     val broadcastData = "ssid\n${it.ssid}\n${it.passwd}\n${it.ipV6Addr}\n"
                     CLog.i("BleServer", "broadcasting $broadcastData")
-                    bleServer.sendResponse(device, broadcastData.toByteArray())
+                    bleServer.broadcast(broadcastData.toByteArray())
                 }
             },2000)
         }
