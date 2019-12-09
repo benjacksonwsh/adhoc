@@ -1,4 +1,4 @@
-package io.github.prototypez.appjoint.plugin.util
+package com.sdk.plugin.util
 
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
@@ -12,63 +12,37 @@ public class Compressor {
 
     private static Log log = LogFactory.getLog(Compressor.class);
 
-    private static final int BUFFER = 8192;
+    private static final int BUFFER = 2 * 1024 * 1024
 
-    private File fileName;
+    private File destFile
 
-    private String originalUrl;
-
-    public Compressor(String pathName) {
-        fileName = new File(pathName);
+    public Compressor(String destPath) {
+        destFile = new File(destPath)
     }
 
-    public void compress(String... pathName) {
-        ZipOutputStream out = null;
+    public void compress(String sourceDir) {
+        File sourceDirFile = new File(sourceDir);
+        if (!sourceDirFile.exists())
+            throw new RuntimeException(srcPathName + " not found")
         try {
-            FileOutputStream fileOutputStream = new FileOutputStream(fileName);
-            CheckedOutputStream cos = new CheckedOutputStream(fileOutputStream,
-                    new CRC32());
-            out = new ZipOutputStream(cos);
-            String basedir = "";
-            for (int i = 0; i < pathName.length; i++) {
-                compress(new File(pathName[i]), out, basedir);
-            }
-            out.close();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+            File[] sourceFiles = sourceDirFile.listFiles();
+            if (null == sourceFiles || sourceFiles.length == 0) {
+                log.info("compress path:" + srcPathName + "is empty")
+            } else {
+                FileOutputStream destStream = new FileOutputStream(destFile)
+                ZipOutputStream out = new ZipOutputStream(new CheckedOutputStream(destStream, new CRC32()))
 
-    public void compress(String srcPathName) {
-        File file = new File(srcPathName);
-        if (!file.exists())
-            throw new RuntimeException(srcPathName + "不存在！");
-        try {
-            File[] sourceFiles = file.listFiles();
-            if(null == sourceFiles || sourceFiles.length<1){
-                System.out.println("待压缩的文件目录：" + srcPathName + "里面不存在文件，无需压缩.");
-            }else{
-                FileOutputStream fileOutputStream = new FileOutputStream(fileName);
-                CheckedOutputStream cos = new CheckedOutputStream(fileOutputStream,
-                        new CRC32());
-                ZipOutputStream out = new ZipOutputStream(cos);
-                String basedir = "";
-                for(int i=0;i<sourceFiles.length;i++){
-                    compress(sourceFiles[i], out, basedir);
+                sourceFiles.each { file ->
+                    compress(file, out, "")
                 }
-                out.close();
+                out.close()
             }
-
-
-
-
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void compress(File file, ZipOutputStream out, String basedir) {
-        /* 判断是目录还是文件 */
+    void compress(File file, ZipOutputStream out, String basedir) {
         if (file.isDirectory()) {
             this.compressDirectory(file, out, basedir);
         } else {
@@ -76,66 +50,33 @@ public class Compressor {
         }
     }
 
-    /**
-     *  压缩目录
-     * @param dir
-     * @param out
-     * @param basedir
-     */
     private void compressDirectory(File dir, ZipOutputStream out, String basedir) {
-        if (!dir.exists())
-            return;
-
-        File[] files = dir.listFiles();
-        for (int i = 0; i < files.length; i++) {
-            /* 递归 */
-            compress(files[i], out, basedir + dir.getName() + "/");
-        }
-    }
-
-    /**
-     * 压缩文件
-     * @param file
-     * @param out
-     * @param basedir
-     */
-    private void compressFile(File file, ZipOutputStream out, String basedir) {
-        if (!file.exists()) {
-            return;
-        }
-        try {
-            BufferedInputStream bis = new BufferedInputStream(
-                    new FileInputStream(file));
-            String filePath = (basedir + file.getName())
-                    .replaceAll(getOriginalUrl() + "/", "");
-            //log.info("basedir:：" + basedir);
-            log.info("压缩文件：" + filePath);
-            ZipEntry entry = new ZipEntry(filePath);
-            out.putNextEntry(entry);
-            int count;
-            byte[] data = new byte[BUFFER];
-            while ((count = bis.read(data, 0, BUFFER)) != -1) {
-                out.write(data, 0, count);
+        if (dir.exists()) {
+            dir.listFiles().each { file ->
+                compress(file, out, basedir + dir.getName() + "/");
             }
-            bis.close();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
     }
 
-    public static void main(String[] args) {
-        Compressor zc = new Compressor("E:\\Base_Crack.jar");
-        zc.compress("E:\\Base\\");
-        System.out.println("压缩成功");
+    private void compressFile(File file, ZipOutputStream out, String basedir) {
+        if (file.exists()) {
+            try {
+                BufferedInputStream bis = new BufferedInputStream(
+                        new FileInputStream(file))
+
+                String filePath = (basedir + file.getName())
+
+                ZipEntry entry = new ZipEntry(filePath);
+                out.putNextEntry(entry)
+                int count
+                byte[] data = new byte[BUFFER]
+                while ((count = bis.read(data, 0, BUFFER)) != -1) {
+                    out.write(data, 0, count);
+                }
+                bis.close();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
-
-    public String getOriginalUrl() {
-        return originalUrl;
-    }
-
-    public void setOriginalUrl(String originalUrl) {
-        this.originalUrl = originalUrl;
-    }
-
-
 }

@@ -4,6 +4,7 @@ import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -15,7 +16,10 @@ import com.sdk.common.utils.Dispatcher
 import com.sdk.common.utils.base64Encode
 import com.sdk.common.utils.format
 import com.sdk.common.utils.log.CLog
+import io.reactivex.Observable
+import io.reactivex.Scheduler
 import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.main_activity.*
 
 class MainActivity: AppCompatActivity(), BleServer.IBleServerListener {
@@ -61,10 +65,6 @@ class MainActivity: AppCompatActivity(), BleServer.IBleServerListener {
         server.start()
 
         val num = 1234567890L
-
-        val result = Base62().encode(num, 62)
-        val n = Base62().decode(result, 62)
-
 
 //        Dispatcher.mainThread.dispatch({
 //            val ssid = adHocSdk.getHotspot()?.ssid?:return@dispatch

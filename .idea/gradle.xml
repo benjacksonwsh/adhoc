@@ -8,18 +8,19 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/AnalyticsDisablePlugin" />
             <option value="$PROJECT_DIR$/adhocsdk" />
             <option value="$PROJECT_DIR$/annotation" />
             <option value="$PROJECT_DIR$/annotationcomplier" />
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/bleclient" />
             <option value="$PROJECT_DIR$/bleserver" />
+            <option value="$PROJECT_DIR$/bluetooth" />
             <option value="$PROJECT_DIR$/plugin" />
             <option value="$PROJECT_DIR$/utils" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />
-        <option name="testRunner" value="PLATFORM" />
       </GradleProjectSettings>
     </option>
   </component>

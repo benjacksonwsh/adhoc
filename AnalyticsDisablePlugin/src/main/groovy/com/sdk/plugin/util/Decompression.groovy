@@ -1,4 +1,4 @@
-package com.sdk.annotationcomplier
+package com.sdk.plugin.util
 
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
@@ -10,116 +10,65 @@ import java.nio.channels.ReadableByteChannel
 import java.util.jar.JarEntry
 import java.util.jar.JarFile
 
-//解压
 public class Decompression {
 
     protected static Log log = LogFactory.getLog(Decompression.class);
 
     @SuppressWarnings("resource")
-    public static void uncompress(File jarFile, File tarDir) throws IOException {
-        JarFile jfInst = new JarFile(jarFile);
-        Enumeration<JarEntry> enumEntry = jfInst.entries();
+    public static void uncompress(File jar, File tarDir) throws IOException {
+        JarFile jarFile = new JarFile(jar)
+        Enumeration<JarEntry> enumEntry = jarFile.entries();
         while (enumEntry.hasMoreElements()) {
             JarEntry jarEntry = enumEntry.nextElement();
-            File tarFile = new File(tarDir, jarEntry.getName());
-            if(jarEntry.getName().contains("META-INF")){
-                File miFile = new File(tarDir, "META-INF");
-                if(!miFile.exists()){
-                    miFile.mkdirs();
-                }
-
-            }
-            makeFile(jarEntry, tarFile);
             if (jarEntry.isDirectory()) {
-                continue;
+                new File(tarDir, jarEntry.getName()).mkdirs()
+            } else  {
+                copyFileFromJar(jarFile, jarEntry, tarDir)
             }
-            FileChannel fileChannel = new FileOutputStream(tarFile).getChannel();
-            InputStream ins = jfInst.getInputStream(jarEntry);
-            transferStream(ins, fileChannel);
         }
     }
 
-    /**
-     * 流交换操作
-     * @param ins 输入流
-     * @param channel 输出流
-     */
-    private static void transferStream(InputStream ins, FileChannel channel) {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(1024 * 10);
-        ReadableByteChannel rbcInst = Channels.newChannel(ins);
+    private static void copyFileFromJar(JarFile jarFile, JarEntry jarEntry, File tarDir) {
+        File toFile = new File(tarDir, jarEntry.getName())
+
+        String toDir = toFile.absolutePath
+        File toDirFile = new File(toDir.substring(0, toDir.lastIndexOf('/')))
+        if (!toDirFile.exists()) {
+            toDirFile.mkdirs()
+        }
+
+        log.info("copyFileFromJar dest dir:" + toDirFile.absolutePath)
+        log.info("copyFileFromJar source:" + jarEntry.getName() + " dest: " + toFile.absolutePath)
+
+        ByteBuffer byteBuffer = ByteBuffer.allocate(2*1024*1024)
+
+        InputStream sourceStream = jarFile.getInputStream(jarEntry);
+        ReadableByteChannel sourceChannel = Channels.newChannel(sourceStream)
+
+        FileChannel destChannel = new FileOutputStream(toFile).getChannel();
         try {
-            while (-1 != (rbcInst.read(byteBuffer))) {
-                byteBuffer.flip();
-                channel.write(byteBuffer);
-                byteBuffer.clear();
+            while (-1 != (sourceChannel.read(byteBuffer))) {
+                byteBuffer.flip()
+                destChannel.write(byteBuffer)
+                byteBuffer.clear()
             }
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace()
         } finally {
-            if (null != rbcInst) {
+            if (null != sourceChannel) {
                 try {
-                    rbcInst.close();
+                    sourceChannel.close()
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    e.printStackTrace()
                 }
             }
-            if (null != channel) {
+            if (null != destChannel) {
                 try {
-                    channel.close();
+                    destChannel.close()
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    e.printStackTrace()
                 }
             }
-        }
-    }
-
-    /**
-     * 打印jar文件内容信息
-     * @param file jar文件
-     */
-    public static void printJarEntry(File file) {
-        JarFile jfInst = null;;
-        try {
-            jfInst = new JarFile(file);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        Enumeration enumEntry = jfInst.entries();
-        while (enumEntry.hasMoreElements()) {
-            log.info((enumEntry.nextElement()));
-        }
-    }
-
-    /**
-     * 创建文件
-     * @param jarEntry jar实体
-     * @param fileInst 文件实体
-     * @throws IOException 抛出异常
-     */
-    public static void makeFile(JarEntry jarEntry, File fileInst) {
-        if (!fileInst.exists()) {
-            if (jarEntry.isDirectory()) {
-                fileInst.mkdirs();
-            } else {
-                try {
-//                    fileInst.createNewFile();
-                    fileInst.getParentFile().mkdirs()
-                    log.info("解压文件：".concat(fileInst.getPath()));
-                } catch (IOException e) {
-                    log.error("创建文件失败>>>".concat(fileInst.getPath()));
-                }
-            }
-        }
-    }
-
-    public static void main(String[] args) {
-        File jarFile = new File("E:\\Base.jar");
-        File targetDir = new File("E:\\Base");
-        try {
-            Decompression.uncompress(jarFile, targetDir);
-            System.out.println("解压成功");
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 }

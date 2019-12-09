@@ -1,4 +1,15 @@
 package com.demo.bluetooth
 
-class BluetoothApplication {
+import android.app.Application
+import com.sdk.common.utils.ContextHolder
+import com.sdk.common.utils.network.NetworkUtil
+
+class BluetoothApplication:Application() {
+    override fun onCreate() {
+        super.onCreate()
+
+        ContextHolder.CONTEXT = this
+        AdHocLoggerInstance.onCreate()
+        NetworkUtil.init(this)
+    }
 }

@@ -1,23 +1,25 @@
-
+package com.sdk.plugin
 import com.google.common.collect.Sets
+import com.sdk.plugin.util.Compressor
+import com.sdk.plugin.util.Decompression
 import groovy.io.FileType
-import io.github.prototypez.appjoint.plugin.util.Compressor
-import io.github.prototypez.appjoint.plugin.util.Decompression
 import jdk.internal.org.objectweb.asm.Opcodes
 import org.apache.commons.io.FileUtils
 import org.gradle.api.Project
+import com.android.build.api.transform.*
+import org.objectweb.asm.*
 
 class MessagingAnalyticsDisable extends Transform {
 
     Project mProject
 
-    AppJointTransform(Project project) {
+    MessagingAnalyticsDisable(Project project) {
         mProject = project
     }
 
     @Override
     String getName() {
-        return "bcm"
+        return "bcm_disable_fcm_analytics"
     }
 
     @Override
@@ -49,7 +51,7 @@ class MessagingAnalyticsDisable extends Transform {
                 mProject.logger.info("jar name:" + jarInput.name)
 
                 def jarName = jarInput.name
-                if (jarName.startsWith("com.google.firebase:firebase-messaging")) {
+                if (jarName.startsWith("com.google.firebase:firebase-messaging") || jarName == ":utils") {
                     def dest = transformInvocation.outputProvider.getContentLocation(jarName, jarInput.contentTypes, jarInput.scopes, Format.JAR)
                     mProject.logger.info("jar output path:" + dest.getAbsolutePath())
                     FileUtils.copyFile(jarInput.file, dest)
@@ -58,6 +60,11 @@ class MessagingAnalyticsDisable extends Transform {
                             transformInvocation,
                             jarInput,
                             {File outputFile, File inputFile ->
+                                if (!inputFile.exists() || !inputFile.name.endsWith(".class")) {
+                                    return
+                                }
+
+                                mProject.logger.info("inputFile name:" + inputFile.name)
                                 def inputStream = new FileInputStream(inputFile)
                                 ClassReader cr = new ClassReader(inputStream)
                                 ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS)
@@ -70,6 +77,33 @@ class MessagingAnalyticsDisable extends Transform {
                     def dest = transformInvocation.outputProvider.getContentLocation(jarName, jarInput.contentTypes, jarInput.scopes, Format.JAR)
                     mProject.logger.info("jar output path:" + dest.getAbsolutePath())
                     FileUtils.copyFile(jarInput.file, dest)
+                }
+            }
+
+            input.directoryInputs.each { dirInput ->
+                mProject.logger.info("dirInput.file :" + dirInput.file)
+
+                def outDir = transformInvocation.outputProvider.getContentLocation(dirInput.name, dirInput.contentTypes, dirInput.scopes, Format.DIRECTORY)
+                int pathBitLen = dirInput.file.toString().length()
+
+                def callback = { File it ->
+                    if (it.exists()) {
+                        def path = "${it.toString().substring(pathBitLen)}"
+                        if (it.isDirectory()) {
+                            new File(outDir, path).mkdirs()
+                        } else {
+                            def output = new File(outDir, path)
+                            if (!output.parentFile.exists()) output.parentFile.mkdirs()
+                            output.bytes = it.bytes
+                        }
+                    }
+                }
+
+                if (dirInput.changedFiles != null && !dirInput.changedFiles.isEmpty()) {
+                    dirInput.changedFiles.keySet().each(callback)
+                }
+                if (dirInput.file != null && dirInput.file.exists()) {
+                    dirInput.file.traverse(callback)
                 }
             }
         }
@@ -100,13 +134,13 @@ class MessagingAnalyticsDisable extends Transform {
 
         @Override
         void visitCode() {
-            mv.visitInsn(ICONST_0)
+            mv.visitInsn(Opcodes.ICONST_0)
             mv.visitInsn(Opcodes.IRETURN)
             super.visitCode()
         }
     }
 
-    static Closure traversalJar(TransformInvocation transformInvocation, JarInput jarInput, Closure closure) {
+    static void traversalJar(TransformInvocation transformInvocation, JarInput jarInput, Closure closure) {
         def jarName = jarInput.name
 
         File unzipDir = new File(

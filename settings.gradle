@@ -1,1 +1,1 @@
-include ':app', ':utils', ':adhocsdk', ':annotationcomplier', ':annotation', ':plugin', ':bleserver', ':bleclient'
+include ':app', ':utils', ':adhocsdk', ':annotationcomplier', ':annotation', ':plugin', ':bleserver', ':bleclient', ':bluetooth',':AnalyticsDisablePlugin'

@@ -40,6 +40,7 @@ class MainActivity:AppCompatActivity(), BleClient.IBleClientListener, RecycleVie
         }
     }
     private val messageMap = HashMap<String, String>()
+    private val syncManager = GroupOfflineSyncManager()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,6 +77,12 @@ class MainActivity:AppCompatActivity(), BleClient.IBleClientListener, RecycleVie
         adapter.setViewHolderDelegate(this)
         main_list.adapter = adapter
 
+
+        syncManager.init()
+
+        for (g in 10L .. 1000L) {
+            syncManager.sync(g, 100, 1000)
+        }
     }
 
     override fun createViewHolder(
