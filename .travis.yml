@@ -9,6 +9,9 @@ android:
 jdk:
   - oraclejdk8
 
+script:
+  - "./gradlew clean build connectedCheck -PdisablePreDex --stacktrace"
+
 licenses:
   - android-sdk-preview-license-.+
   - android-sdk-license-.+
