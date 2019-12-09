@@ -1,13 +1,9 @@
-package io.github.prototypez.appjoint.plugin
-
-import com.android.build.api.transform.*
 import com.google.common.collect.Sets
 import groovy.io.FileType
 import io.github.prototypez.appjoint.plugin.util.Compressor
 import io.github.prototypez.appjoint.plugin.util.Decompression
 import org.apache.commons.io.FileUtils
 import org.gradle.api.Project
-import org.objectweb.asm.*
 
 class AppJointTransform extends Transform {
 
